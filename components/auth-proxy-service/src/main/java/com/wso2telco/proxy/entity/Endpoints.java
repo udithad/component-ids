@@ -32,6 +32,9 @@ import com.wso2telco.proxy.util.AuthProxyConstants;
 import com.wso2telco.proxy.util.DBUtils;
 import com.wso2telco.proxy.util.Decrypt;
 import com.wso2telco.proxy.util.EncryptAES;
+import com.wso2telco.sp.provision.service.ProvisioningService;
+import com.wso2telco.sp.provision.service.impl.ProvisioningServiceImpl;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -119,7 +122,8 @@ public class Endpoints {
             Exception {
 
         log.info("Request processing started from proxy");
-
+        ProvisioningService<Object, Object> ad = new ProvisioningServiceImpl();
+        ad.provisionServiceProvider(new Object());
         operatorName = operatorName.toLowerCase();
         //Read query params from the header.
         MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
