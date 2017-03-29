@@ -26,6 +26,7 @@
 
 	<properties>
 		<maven.javadoc.skip>true</maven.javadoc.skip>
+		<junit.version>4.11</junit.version>
 	</properties>
 
 	<dependencies>
@@ -39,6 +40,12 @@
 			<groupId>org.wso2.carbon</groupId>
 			<artifactId>org.wso2.carbon.logging</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${junit.version}</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 
@@ -51,6 +58,13 @@
 				<configuration>
 					<source>1.7</source>
 					<target>1.7</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<skipTests>false</skipTests>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -136,7 +150,7 @@
 							org.wso2.carbon.idp.mgt;
 							version="${carbon.identity.package.import.version.range}",
 							com.wso2telco.core.spprovisionservice.*
-						</Import-Package> 
+						</Import-Package>
 						<Export-Package>
 							com.wso2telco.sp.*
 						</Export-Package>
