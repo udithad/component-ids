@@ -132,7 +132,7 @@
 						<Bundle-Name>${project.artifactId}</Bundle-Name>
 						<Bundle-Version>${project.version}</Bundle-Version>
 						<Bundle-Description>Open ID Token Builder Bundle</Bundle-Description>
-						<Private-Package>com.wso2telco.sp</Private-Package>
+						<Private-Package>com.wso2telco.internal</Private-Package>
 						<Import-Package>
 							javax.xml.namespace,
 							javax.xml.stream,

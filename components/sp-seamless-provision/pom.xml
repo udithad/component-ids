@@ -30,6 +30,45 @@
 	</properties>
 
 	<dependencies>
+
+
+		<dependency>
+			<groupId>org.wso2.carbon.identity</groupId>
+			<artifactId>org.wso2.carbon.identity.oauth</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.wso2.carbon.identity</groupId>
+			<artifactId>org.wso2.carbon.identity.application.common</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.wso2.carbon.identity</groupId>
+			<artifactId>org.wso2.carbon.identity.application.authentication.framework</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.amber.wso2</groupId>
+			<artifactId>amber</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.wso2.carbon</groupId>
+			<artifactId>org.wso2.carbon.logging</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>commons-httpclient.wso2</groupId>
+			<artifactId>commons-httpclient</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.jayway.jsonpath.wso2</groupId>
+			<artifactId>json-path</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.wso2.carbon.identity</groupId>
+			<artifactId>org.wso2.carbon.identity.core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.json.wso2</groupId>
+			<artifactId>json</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>com.wso2telco.core</groupId>
 			<artifactId>spprovisionservice</artifactId>
@@ -39,6 +78,10 @@
 		<dependency>
 			<groupId>org.wso2.carbon</groupId>
 			<artifactId>org.wso2.carbon.logging</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.wso2.carbon.identity</groupId>
+			<artifactId>org.wso2.carbon.identity.oauth</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
@@ -152,7 +195,7 @@
 							com.wso2telco.core.spprovisionservice.*
 						</Import-Package>
 						<Export-Package>
-							com.wso2telco.sp.*
+							com.wso2telco.sp.*,com.wso2telco.carbon.*
 						</Export-Package>
 						<Embed-Dependency>
 							nimbus-jose-jwt|json-smart;scope=compile|runtime;inline=false
