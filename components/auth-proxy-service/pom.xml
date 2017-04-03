@@ -107,6 +107,12 @@
 			<version>2.0.13</version>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.wso2telco.core</groupId>
+			<artifactId>spprovisionservice</artifactId>
+			<version>2.0.4-SNAPSHOT</version>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 
 	<build>

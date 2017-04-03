@@ -32,8 +32,9 @@ import com.wso2telco.proxy.util.AuthProxyConstants;
 import com.wso2telco.proxy.util.DBUtils;
 import com.wso2telco.proxy.util.Decrypt;
 import com.wso2telco.proxy.util.EncryptAES;
-import com.wso2telco.sp.provision.service.ProvisioningService;
-import com.wso2telco.sp.provision.service.impl.ProvisioningServiceImpl;
+import com.wso2telco.sp.discovery.service.DiscoveryService;
+import com.wso2telco.sp.discovery.service.impl.DiscoveryServiceImpl;
+import com.wso2telco.sp.util.TransformUtil;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -74,6 +75,7 @@ public class Endpoints {
     private static MobileConnectConfig mobileConnectConfigs = null;
     private static Map<String, List<MSISDNHeader>> operatorsMSISDNHeadersMap;
     private static Map<String, MobileConnectConfig.OPERATOR> operatorPropertiesMap = null;
+    private static DiscoveryService discoveryService = null;
 
     /**
      * The Configuration service
@@ -97,16 +99,17 @@ public class Endpoints {
 
     static {
         try {
-            //Load mobile-connect.xml file.
+            // Load mobile-connect.xml file.
             mobileConnectConfigs = configurationService.getDataHolder().getMobileConnectConfig();
-            //Load msisdn header properties.
+            // Load msisdn header properties.
             operatorsMSISDNHeadersMap = DBUtils.getOperatorsMSISDNHeaderProperties();
-            //Load operator properties.
+            // Load operator properties.
             operatorPropertiesMap = new HashMap<String, MobileConnectConfig.OPERATOR>();
             List<MobileConnectConfig.OPERATOR> operators = mobileConnectConfigs.getHEADERENRICH().getOperators();
             for (MobileConnectConfig.OPERATOR op : operators) {
                 operatorPropertiesMap.put(op.getOperatorName(), op);
             }
+            discoveryService = new DiscoveryServiceImpl();
         } catch (SQLException e) {
             log.error("Error occurred while retrieving operator MSISDN properties of operators.");
         } catch (NamingException e) {
@@ -116,46 +119,47 @@ public class Endpoints {
 
     @GET
     @Path("/oauth2/authorize/operator/{operatorName}")
-    public void RedirectToAuthorizeEndpoint(@Context HttpServletRequest httpServletRequest, @Context
-            HttpServletResponse httpServletResponse, @Context HttpHeaders httpHeaders, @Context UriInfo uriInfo,
-                                            @PathParam("operatorName") String operatorName, String jsonBody) throws
-            Exception {
+    public void RedirectToAuthorizeEndpoint(@Context HttpServletRequest httpServletRequest,
+            @Context HttpServletResponse httpServletResponse, @Context HttpHeaders httpHeaders,
+            @Context UriInfo uriInfo, @PathParam("operatorName") String operatorName, String jsonBody)
+            throws Exception {
 
         log.info("Request processing started from proxy");
-        ProvisioningService<Object, Object> ad = new ProvisioningServiceImpl();
-        ad.provisionServiceProvider(new Object());
+
         operatorName = operatorName.toLowerCase();
-        //Read query params from the header.
+        // Read query params from the header.
         MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
         String clientId = queryParams.getFirst("client_id");
         String redirectURL = queryParams.get(AuthProxyConstants.REDIRECT_URI).get(0);
         String scopeName = queryParams.get(AuthProxyConstants.SCOPE).get(0);
 
+        discoveryService.servceProviderCredentialDiscovery(
+                TransformUtil.transformDiscoveryConfig(mobileConnectConfigs.getDiscoveryConfig(), mobileConnectConfigs),
+                TransformUtil.transofrmDiscoveryDto(httpServletRequest.getParameter("client_id"), redirectURL));
 
-        //maintain userstatus related to request for data publishing purpose
+        // maintain userstatus related to request for data publishing purpose
         UserStatus userStatus = DataPublisherUtil.buildUserStatusFromRequest(httpServletRequest);
-        //check for forwarded trn Id
+        // check for forwarded trn Id
         String transactionId = DataPublisherUtil.getSessionID(httpServletRequest);
         if (StringUtils.isEmpty(transactionId)) {
-            //generate new trn id
+            // generate new trn id
             transactionId = UUID.randomUUID().toString();
         }
 
         userStatus.setTransactionId(transactionId);
-        userStatus.setConsumerKey(((ContainerRequest) httpHeaders).getQueryParameters().getFirst(
-                AuthProxyConstants.CLIENT_ID));
+        userStatus.setConsumerKey(
+                ((ContainerRequest) httpHeaders).getQueryParameters().getFirst(AuthProxyConstants.CLIENT_ID));
 
         userStatus.setStatus(DataPublisherUtil.UserState.PROXY_PROCESSING.name());
         DataPublisherUtil.publishUserStatusMetaData(userStatus);
         DataPublisherUtil.updateAndPublishUserStatus(userStatus, DataPublisherUtil.UserState.PROXY_PROCESSING, null);
 
-
-        if (!configurationService.getDataHolder().getMobileConnectConfig().isSpValidationDisabled() && !isValidScope
-                (scopeName, clientId)) {
+        if (!configurationService.getDataHolder().getMobileConnectConfig().isSpValidationDisabled()
+                && !isValidScope(scopeName, clientId)) {
             String errMsg = "Scope [ " + scopeName + " ] is not allowed for client [ " + clientId + " ]";
             log.error(errMsg);
-            DataPublisherUtil.updateAndPublishUserStatus(
-                    userStatus, DataPublisherUtil.UserState.INVALID_REQUEST, errMsg);
+            DataPublisherUtil.updateAndPublishUserStatus(userStatus, DataPublisherUtil.UserState.INVALID_REQUEST,
+                    errMsg);
 
             redirectURL = redirectURL + "?error=access_denied";
         } else {
@@ -170,7 +174,7 @@ public class Endpoints {
 
                 List<String> loginHintParameter = queryParams.get(AuthProxyConstants.LOGIN_HINT);
                 if (loginHintParameter != null) {
-                    //Read login_hint value from the query params.
+                    // Read login_hint value from the query params.
                     loginHint = loginHintParameter.get(0);
                     if (log.isDebugEnabled()) {
                         log.debug("Login Hint : " + loginHint);
@@ -178,13 +182,13 @@ public class Endpoints {
                 }
 
                 String authorizeUrlProperty = null;
-                //have to check whether mobile-connect.xml exists or not.
+                // have to check whether mobile-connect.xml exists or not.
                 if (mobileConnectConfigs != null) {
                     authorizeUrlProperty = mobileConnectConfigs.getAuthProxy().getAuthorizeURL();
                 } else {
                     String errMsg = "mobile-connect.xml could not be found";
-                    DataPublisherUtil.updateAndPublishUserStatus(userStatus, DataPublisherUtil.UserState
-                            .CONFIGURATION_ERROR, errMsg);
+                    DataPublisherUtil.updateAndPublishUserStatus(userStatus,
+                            DataPublisherUtil.UserState.CONFIGURATION_ERROR, errMsg);
 
                     throw new FileNotFoundException(errMsg);
                 }
@@ -197,15 +201,15 @@ public class Endpoints {
                     if (log.isDebugEnabled()) {
                         for (String httpHeader : httpHeaders.getRequestHeaders().keySet()) {
                             if (log.isDebugEnabled()) {
-                                log.debug("Header : " + httpHeader + " Value: " + httpHeaders.getRequestHeader
-                                        (httpHeader));
+                                log.debug("Header : " + httpHeader + " Value: "
+                                        + httpHeaders.getRequestHeader(httpHeader));
                             }
                         }
                     }
                 }
                 ipAddress = getIpAddress(httpHeaders, operatorName);
 
-                //Validate with Scope wise parameters and throw exceptions
+                // Validate with Scope wise parameters and throw exceptions
                 ScopeParam scopeParam = validateAndSetScopeParameters(loginHint, msisdn, scopeName, redirectUrlInfo,
                         userStatus);
 
@@ -223,18 +227,18 @@ public class Endpoints {
                     operatorScopeWithClaims = queryParams.get(AuthProxyConstants.SCOPE).get(0);
 
                     // Check if scope list contains openid scope, and append if it does not contain
-                    if (queryParams.containsKey(AuthProxyConstants.SCOPE) && queryParams.get(AuthProxyConstants
-                            .SCOPE).get(0) != null) {
-                        List<String> scopes = new ArrayList<>(Arrays.asList(queryParams.get(AuthProxyConstants.SCOPE)
-                                .get(0).split(" ")));
+                    if (queryParams.containsKey(AuthProxyConstants.SCOPE)
+                            && queryParams.get(AuthProxyConstants.SCOPE).get(0) != null) {
+                        List<String> scopes = new ArrayList<>(
+                                Arrays.asList(queryParams.get(AuthProxyConstants.SCOPE).get(0).split(" ")));
                         if (!scopes.contains(AuthProxyConstants.SCOPE_OPENID)) {
-                            queryParams.get(AuthProxyConstants.SCOPE)
-                                    .add(0, scopeParam.getScope() + " " + AuthProxyConstants.SCOPE_OPENID);
+                            queryParams.get(AuthProxyConstants.SCOPE).add(0,
+                                    scopeParam.getScope() + " " + AuthProxyConstants.SCOPE_OPENID);
                         }
                     }
 
                     List<String> promptValues = queryParams.get(AuthProxyConstants.PROMPT);
-                    if(promptValues != null && !promptValues.isEmpty()) {
+                    if (promptValues != null && !promptValues.isEmpty()) {
                         redirectUrlInfo.setPrompt(promptValues.get(0));
                         queryParams.remove(AuthProxyConstants.PROMPT);
                     }
@@ -269,13 +273,12 @@ public class Endpoints {
                     redirectUrlInfo.setTransactionId(userStatus.getTransactionId());
                     redirectURL = constructRedirectUrl(redirectUrlInfo, userStatus);
 
-                    DataPublisherUtil.updateAndPublishUserStatus(
-                            userStatus, DataPublisherUtil.UserState.PROXY_REQUEST_FORWARDED_TO_IS, "Redirect URL : "
-                                    + redirectURL);
+                    DataPublisherUtil.updateAndPublishUserStatus(userStatus,
+                            DataPublisherUtil.UserState.PROXY_REQUEST_FORWARDED_TO_IS, "Redirect URL : " + redirectURL);
                 }
             } catch (Exception e) {
                 log.error("Exception : " + e.getMessage());
-                //todo: dynamically set error description depending on scope parameters
+                // todo: dynamically set error description depending on scope parameters
                 redirectURL = redirectURL + "?error=access_denied&error_description=" + e.getMessage();
                 DataPublisherUtil.updateAndPublishUserStatus(userStatus, DataPublisherUtil.UserState.OTHER_ERROR,
                         e.getMessage());
@@ -289,7 +292,6 @@ public class Endpoints {
         httpServletResponse.sendRedirect(redirectURL);
     }
 
-
     /**
      * Check if the Scope is allowed for SP
      *
@@ -301,7 +303,6 @@ public class Endpoints {
             throws AuthenticatorException, ConfigurationException {
         return DBUtils.isSPAllowedScope(scopeName, clientId);
     }
-
 
     /**
      * Validate and set scope related parameters to RedirectUrlInfo
@@ -315,9 +316,9 @@ public class Endpoints {
      * @throws ConfigurationException
      */
     private ScopeParam validateAndSetScopeParameters(String loginHint, String msisdnHeader, String scope,
-                                               RedirectUrlInfo redirectUrlInfo, UserStatus userStatus)
+            RedirectUrlInfo redirectUrlInfo, UserStatus userStatus)
             throws AuthenticationFailedException, ConfigurationException {
-        //TODO: get all scope related params. This should be move to a initialization method or add to cache later
+        // TODO: get all scope related params. This should be move to a initialization method or add to cache later
         ScopeParam scopeParam = getScopeParam(scope, userStatus);
         // show t&c page on authenticators depending on this scope specific variable
 
@@ -330,7 +331,6 @@ public class Endpoints {
             throw new AuthenticationFailedException(errMsg);
         }
 
-
         redirectUrlInfo.setShowTnc(scopeParam.isTncVisible());
         redirectUrlInfo.setHeaderMismatchResult(scopeParam.getMsisdnMismatchResult());
         redirectUrlInfo.setHeFailureResult(scopeParam.getHeFailureResult());
@@ -339,8 +339,8 @@ public class Endpoints {
 
         if (scopeParam.isLoginHintMandatory() && StringUtils.isEmpty(loginHint)) {
             String errMsg = "Login Hint parameter cannot be empty for scope : " + scope;
-            DataPublisherUtil.updateAndPublishUserStatus(userStatus,
-                    DataPublisherUtil.UserState.LOGIN_HINT_INVALID, errMsg);
+            DataPublisherUtil.updateAndPublishUserStatus(userStatus, DataPublisherUtil.UserState.LOGIN_HINT_INVALID,
+                    errMsg);
 
             throw new AuthenticationFailedException(errMsg);
         }
@@ -373,11 +373,9 @@ public class Endpoints {
                 if (ScopeParam.msisdnMismatchResultTypes.ERROR_RETURN.equals(scopeParam.getMsisdnMismatchResult())) {
                     if (!verifiedLoginHint.equals(msisdnHeader)) {
                         DataPublisherUtil.updateAndPublishUserStatus(userStatus,
-                                DataPublisherUtil.UserState.LOGIN_HINT_MISMATCH,
-                                null);
+                                DataPublisherUtil.UserState.LOGIN_HINT_MISMATCH, null);
 
-                        throw new AuthenticationFailedException(
-                                "login hint is not matching with the header msisdn");
+                        throw new AuthenticationFailedException("login hint is not matching with the header msisdn");
                     }
                 }
             }
@@ -394,8 +392,8 @@ public class Endpoints {
      * @throws AuthenticationFailedException
      * @throws ConfigurationException
      */
-    private ScopeParam getScopeParam(String scope, UserStatus userStatus) throws AuthenticationFailedException,
-            ConfigurationException {
+    private ScopeParam getScopeParam(String scope, UserStatus userStatus)
+            throws AuthenticationFailedException, ConfigurationException {
         Map scopeDetail;
         try {
             scopeDetail = DBUtils.getScopeParams(scope);
@@ -414,7 +412,7 @@ public class Endpoints {
             throw new ConfigurationException(errMsg);
         }
 
-        //set the scope specific params
+        // set the scope specific params
         return (ScopeParam) scopeDetail.get("params");
     }
 
@@ -427,63 +425,61 @@ public class Endpoints {
      * @throws AuthenticationFailedException
      */
     private String retunFormatVerfiedPlainTextLoginHint(String loginHint,
-                                                        List<LoginHintFormatDetails>
-                                                                loginHintAllowedFormatDetailsList, UserStatus
-                                                                userStatus)
+            List<LoginHintFormatDetails> loginHintAllowedFormatDetailsList, UserStatus userStatus)
             throws AuthenticationFailedException {
-        boolean isValidFormatType = false; //msisdn/loginhint should be a either of defined formats
+        boolean isValidFormatType = false; // msisdn/loginhint should be a either of defined formats
 
         String plainTextLoginHint = null;
         for (LoginHintFormatDetails loginHintFormatDetails : loginHintAllowedFormatDetailsList) {
 
             switch (loginHintFormatDetails.getFormatType()) {
-                case PLAINTEXT:
-                    if (log.isDebugEnabled()) {
-                        log.debug("Plain text login hint : " + plainTextLoginHint);
-                    }
-                    if (StringUtils.isNotEmpty(loginHint) && (!loginHint.startsWith(LOGIN_HINT_ENCRYPTED_PREFIX) &&
-                            !loginHint.startsWith(LOGIN_HINT_NOENCRYPTED_PREFIX))) {
-                        plainTextLoginHint = loginHint;
-                        isValidFormatType = true;
-                    }
-                    break;
-                case ENCRYPTED:
-                    String decryptAlgorithm = loginHintFormatDetails.getDecryptAlgorithm();
-                    if (StringUtils.isNotEmpty(loginHint)) {
-                        if (loginHint.startsWith(LOGIN_HINT_ENCRYPTED_PREFIX)) {
-                            String decrypted = null;
-                            try {
-                                //decrypt msisdn using given algorithm
-                                decrypted = Decrypt.decryptData(loginHint.replace(LOGIN_HINT_ENCRYPTED_PREFIX, ""),
-                                        decryptAlgorithm);
-                                if (log.isDebugEnabled()) {
-                                    log.debug("Decrypted login hint : " + decrypted);
-                                }
-                                plainTextLoginHint = decrypted.substring(0, decrypted.indexOf(LOGIN_HINT_SEPARATOR));
-                                if (log.isDebugEnabled()) {
-                                    log.debug("MSISDN by encrypted login hint : " + plainTextLoginHint);
-                                }
-                                isValidFormatType = true;
-                            } catch (Exception e) {
-                                log.error("Error while decrypting login hint : " + loginHint, e);
-                            }
-                        }
-                    }
-                    break;
-                case MSISDN:
-                    if (StringUtils.isNotEmpty(loginHint)) {
-                        if (loginHint.startsWith(LOGIN_HINT_NOENCRYPTED_PREFIX)) {
-                            plainTextLoginHint = loginHint.replace(LOGIN_HINT_NOENCRYPTED_PREFIX, "");
+            case PLAINTEXT:
+                if (log.isDebugEnabled()) {
+                    log.debug("Plain text login hint : " + plainTextLoginHint);
+                }
+                if (StringUtils.isNotEmpty(loginHint) && (!loginHint.startsWith(LOGIN_HINT_ENCRYPTED_PREFIX)
+                        && !loginHint.startsWith(LOGIN_HINT_NOENCRYPTED_PREFIX))) {
+                    plainTextLoginHint = loginHint;
+                    isValidFormatType = true;
+                }
+                break;
+            case ENCRYPTED:
+                String decryptAlgorithm = loginHintFormatDetails.getDecryptAlgorithm();
+                if (StringUtils.isNotEmpty(loginHint)) {
+                    if (loginHint.startsWith(LOGIN_HINT_ENCRYPTED_PREFIX)) {
+                        String decrypted = null;
+                        try {
+                            // decrypt msisdn using given algorithm
+                            decrypted = Decrypt.decryptData(loginHint.replace(LOGIN_HINT_ENCRYPTED_PREFIX, ""),
+                                    decryptAlgorithm);
                             if (log.isDebugEnabled()) {
-                                log.debug("MSISDN by login hint: " + plainTextLoginHint);
+                                log.debug("Decrypted login hint : " + decrypted);
+                            }
+                            plainTextLoginHint = decrypted.substring(0, decrypted.indexOf(LOGIN_HINT_SEPARATOR));
+                            if (log.isDebugEnabled()) {
+                                log.debug("MSISDN by encrypted login hint : " + plainTextLoginHint);
                             }
                             isValidFormatType = true;
+                        } catch (Exception e) {
+                            log.error("Error while decrypting login hint : " + loginHint, e);
                         }
                     }
-                    break;
-                default:
-                    log.warn("Invalid Login Hint format - " + loginHintFormatDetails.getFormatType());
-                    break;
+                }
+                break;
+            case MSISDN:
+                if (StringUtils.isNotEmpty(loginHint)) {
+                    if (loginHint.startsWith(LOGIN_HINT_NOENCRYPTED_PREFIX)) {
+                        plainTextLoginHint = loginHint.replace(LOGIN_HINT_NOENCRYPTED_PREFIX, "");
+                        if (log.isDebugEnabled()) {
+                            log.debug("MSISDN by login hint: " + plainTextLoginHint);
+                        }
+                        isValidFormatType = true;
+                    }
+                }
+                break;
+            default:
+                log.warn("Invalid Login Hint format - " + loginHintFormatDetails.getFormatType());
+                break;
             }
 
             if (isValidFormatType) {
@@ -492,68 +488,66 @@ public class Endpoints {
 
         }
 
-        //msisdn/loginhint should be a either of defined formats
+        // msisdn/loginhint should be a either of defined formats
         if (!isValidFormatType || !validateMsisdnFormat(plainTextLoginHint)) {
             DataPublisherUtil.updateAndPublishUserStatus(userStatus, DataPublisherUtil.UserState.LOGIN_HINT_INVALID,
                     null);
 
-            throw new AuthenticationFailedException(
-                    "login hint is malformat");
+            throw new AuthenticationFailedException("login hint is malformat");
         }
 
         return plainTextLoginHint;
     }
 
-
     private String retreiveLoginHintMsisdn(String loginHint, ScopeParam scopeParam)
             throws AuthenticationFailedException, ConfigurationException {
-        boolean isValidFormatType = false; //msisdn/loginhint should be a either of defined formats
+        boolean isValidFormatType = false; // msisdn/loginhint should be a either of defined formats
         String msisdn = null;
 
         for (LoginHintFormatDetails loginHintFormatDetails : scopeParam.getLoginHintFormat()) {
             switch (loginHintFormatDetails.getFormatType()) {
-                case PLAINTEXT:
-                    if (StringUtils.isNotEmpty(loginHint)) {
-                        msisdn = loginHint;
-                    }
-                    isValidFormatType = true;
-                    break;
-                case ENCRYPTED:
-                    String decryptAlgorithm = loginHintFormatDetails.getDecryptAlgorithm();
-                    if (StringUtils.isNotEmpty(loginHint)) {
-                        if (loginHint.startsWith(LOGIN_HINT_ENCRYPTED_PREFIX)) {
-                            String decrypted = null;
-                            try {
-                                //decrypt msisdn using given algorithm
-                                decrypted = Decrypt.decryptData(loginHint.replace(LOGIN_HINT_ENCRYPTED_PREFIX, ""),
-                                        decryptAlgorithm);
-                                msisdn = decrypted.substring(0, decrypted.indexOf(LOGIN_HINT_SEPARATOR));
-                                isValidFormatType = true;
-                                break;
-                            } catch (Exception e) {
-                                log.error("Error while decrypting login hint : " + loginHint, e);
-                            }
-                        }
-                    } else {
-                        isValidFormatType = true;
-                        break;
-                    }
-                case MSISDN:
-                    if (StringUtils.isNotEmpty(loginHint)) {
-                        if (loginHint.startsWith(LOGIN_HINT_NOENCRYPTED_PREFIX)) {
-                            msisdn = loginHint.replace(LOGIN_HINT_NOENCRYPTED_PREFIX, "");
+            case PLAINTEXT:
+                if (StringUtils.isNotEmpty(loginHint)) {
+                    msisdn = loginHint;
+                }
+                isValidFormatType = true;
+                break;
+            case ENCRYPTED:
+                String decryptAlgorithm = loginHintFormatDetails.getDecryptAlgorithm();
+                if (StringUtils.isNotEmpty(loginHint)) {
+                    if (loginHint.startsWith(LOGIN_HINT_ENCRYPTED_PREFIX)) {
+                        String decrypted = null;
+                        try {
+                            // decrypt msisdn using given algorithm
+                            decrypted = Decrypt.decryptData(loginHint.replace(LOGIN_HINT_ENCRYPTED_PREFIX, ""),
+                                    decryptAlgorithm);
+                            msisdn = decrypted.substring(0, decrypted.indexOf(LOGIN_HINT_SEPARATOR));
                             isValidFormatType = true;
                             break;
+                        } catch (Exception e) {
+                            log.error("Error while decrypting login hint : " + loginHint, e);
                         }
-                    } else {
+                    }
+                } else {
+                    isValidFormatType = true;
+                    break;
+                }
+            case MSISDN:
+                if (StringUtils.isNotEmpty(loginHint)) {
+                    if (loginHint.startsWith(LOGIN_HINT_NOENCRYPTED_PREFIX)) {
+                        msisdn = loginHint.replace(LOGIN_HINT_NOENCRYPTED_PREFIX, "");
                         isValidFormatType = true;
                         break;
                     }
-                default:
-                    log.warn("Invalid Login Hint format - " + loginHintFormatDetails.getFormatType());
+                } else {
+                    isValidFormatType = true;
+                    break;
+                }
+            default:
+                log.warn("Invalid Login Hint format - " + loginHintFormatDetails.getFormatType());
             }
 
-            //msisdn/loginhint should be a either of defined formats
+            // msisdn/loginhint should be a either of defined formats
             if (isValidFormatType && validateMsisdnFormat(msisdn)) {
                 return msisdn;
             }
@@ -570,13 +564,12 @@ public class Endpoints {
      */
     private boolean validateMsisdnFormat(String msisdn) {
         if (StringUtils.isNotEmpty(msisdn)) {
-            String plaintextMsisdnRegex =
-                    configurationService.getDataHolder().getMobileConnectConfig().getMsisdn().getValidationRegex();
+            String plaintextMsisdnRegex = configurationService.getDataHolder().getMobileConnectConfig().getMsisdn()
+                    .getValidationRegex();
             return msisdn.matches(plaintextMsisdnRegex);
         }
         return true;
     }
-
 
     private String decryptMSISDN(HttpHeaders httpHeaders, String operatorName)
             throws ClassNotFoundException, NoSuchPaddingException, BadPaddingException, UnsupportedEncodingException,
@@ -622,8 +615,8 @@ public class Endpoints {
         return ipAddress;
     }
 
-    private String constructRedirectUrl(RedirectUrlInfo redirectUrlInfo, UserStatus userStatus) throws
-            ConfigurationException {
+    private String constructRedirectUrl(RedirectUrlInfo redirectUrlInfo, UserStatus userStatus)
+            throws ConfigurationException {
         String redirectURL = null;
         String authorizeUrl = redirectUrlInfo.getAuthorizeUrl();
         String queryString = redirectUrlInfo.getQueryString();
@@ -639,19 +632,17 @@ public class Endpoints {
 
         String transactionId = redirectUrlInfo.getTransactionId();
         if (authorizeUrl != null) {
-            redirectURL = authorizeUrl + queryString + "&" + AuthProxyConstants.OPERATOR + "=" +
-                    operatorName + "&" + AuthProxyConstants.TELCO_SCOPE + "=" + telcoScope + "&" +
-                    AuthProxyConstants.SHOW_TNC + "=" + isShowTnc + "&" + AuthProxyConstants.HEADER_MISMATCH_RESULT +
-                    "=" + headerMismatchResult + "&" + AuthProxyConstants.HE_FAILURE_RESULT +
-                    "=" + heFailureResult;
+            redirectURL = authorizeUrl + queryString + "&" + AuthProxyConstants.OPERATOR + "=" + operatorName + "&"
+                    + AuthProxyConstants.TELCO_SCOPE + "=" + telcoScope + "&" + AuthProxyConstants.SHOW_TNC + "="
+                    + isShowTnc + "&" + AuthProxyConstants.HEADER_MISMATCH_RESULT + "=" + headerMismatchResult + "&"
+                    + AuthProxyConstants.HE_FAILURE_RESULT + "=" + heFailureResult;
 
             if (msisdnHeader != null && StringUtils.isNotEmpty(msisdnHeader)) {
                 redirectURL = redirectURL + "&" + AuthProxyConstants.MSISDN_HEADER + "=" + msisdnHeader;
             }
 
             if (loginHintMsisdn != null && !StringUtils.isEmpty(loginHintMsisdn)) {
-                redirectURL = redirectURL + "&" + AuthProxyConstants.LOGIN_HINT_MSISDN +
-                        "=" + loginHintMsisdn;
+                redirectURL = redirectURL + "&" + AuthProxyConstants.LOGIN_HINT_MSISDN + "=" + loginHintMsisdn;
             }
 
             // Reconstruct Authorize url with ip address.
@@ -660,13 +651,11 @@ public class Endpoints {
             }
 
             if (StringUtils.isNotEmpty(transactionId)) {
-                redirectURL = redirectURL + "&" + AuthProxyConstants.TRANSACTION_ID +
-                        "=" + transactionId;
+                redirectURL = redirectURL + "&" + AuthProxyConstants.TRANSACTION_ID + "=" + transactionId;
             }
 
-            if(StringUtils.isNotEmpty(prompt)){
-                redirectURL = redirectURL + "&" + AuthProxyConstants.TELCO_PROMPT +
-                        "=" + prompt;
+            if (StringUtils.isNotEmpty(prompt)) {
+                redirectURL = redirectURL + "&" + AuthProxyConstants.TELCO_PROMPT + "=" + prompt;
             }
         } else {
             String errMsg = "AuthorizeURL could not be found in mobile-connect.xml";
@@ -685,8 +674,8 @@ public class Endpoints {
         return queryString;
     }
 
-    private boolean isUserExists(String userName) throws RemoteException,
-            UserRegistrationAdminServiceUserRegistrationException {
+    private boolean isUserExists(String userName)
+            throws RemoteException, UserRegistrationAdminServiceUserRegistrationException {
         UserRegistrationAdminService userRegistrationAdminService = new UserRegistrationAdminServiceStub();
         boolean isUserExists = userRegistrationAdminService.isUserExist(userName);
         return isUserExists;
@@ -697,8 +686,8 @@ public class Endpoints {
             UserRegistrationAdminServiceIdentityException, UserRegistrationAdminServiceException {
         UserRegistrationAdminService userRegistrationAdminService = new UserRegistrationAdminServiceStub();
 
-        UserFieldDTO[] userFieldDTOs = userRegistrationAdminService.readUserFieldsForUserRegistration
-                (AuthProxyConstants.CLAIM);
+        UserFieldDTO[] userFieldDTOs = userRegistrationAdminService
+                .readUserFieldsForUserRegistration(AuthProxyConstants.CLAIM);
 
         for (int count = 0; count < userFieldDTOs.length; count++) {
             if (AuthProxyConstants.OPERATOR_CLAIM_NAME.equalsIgnoreCase(userFieldDTOs[count].getClaimUri())) {
@@ -717,9 +706,8 @@ public class Endpoints {
             }
 
             if (log.isDebugEnabled()) {
-                log.debug("User Fields Value :" + userFieldDTOs[count].getFieldValue() + " : Claim " +
-                        userFieldDTOs[count].getClaimUri() + " : Name " +
-                        userFieldDTOs[count].getFieldName());
+                log.debug("User Fields Value :" + userFieldDTOs[count].getFieldValue() + " : Claim "
+                        + userFieldDTOs[count].getClaimUri() + " : Name " + userFieldDTOs[count].getFieldName());
             }
         }
 
@@ -731,4 +719,3 @@ public class Endpoints {
         userRegistrationAdminService.addUser(userDTO);
     }
 }
-

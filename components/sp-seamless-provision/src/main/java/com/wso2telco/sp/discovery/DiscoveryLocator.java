@@ -1,20 +1,23 @@
 package com.wso2telco.sp.discovery;
 
-public abstract class DiscoveryLocator<K, T> {
+import com.wso2telco.core.spprovisionservice.sp.entity.DiscoveryServiceConfig;
+import com.wso2telco.core.spprovisionservice.sp.entity.DiscoveryServiceDto;
+import com.wso2telco.core.spprovisionservice.sp.entity.ServiceProviderDto;
+import com.wso2telco.sp.discovery.exception.DicoveryException;
 
-    private DiscoveryLocator<K, T> nextDiscovery;
+public abstract class DiscoveryLocator {
 
-    public abstract K findSpBy(String clientId);
+    private DiscoveryLocator nextDiscovery;
 
-    private K nextDiscoveryOperation(String clientId) {
-        return this.nextDiscovery.findSpBy(clientId);
-    }
+    public abstract ServiceProviderDto servceProviderDiscovery(DiscoveryServiceConfig discoveryServiceConfig,
+            DiscoveryServiceDto discoveryServiceDto) throws DicoveryException;
 
-    public DiscoveryLocator<K, T> getNextDiscovery() {
+
+    public DiscoveryLocator getNextDiscovery() {
         return nextDiscovery;
     }
 
-    public void setNextDiscovery(DiscoveryLocator<K, T> nextDiscovery) {
+    public void setNextDiscovery(DiscoveryLocator nextDiscovery) {
         this.nextDiscovery = nextDiscovery;
     }
 
