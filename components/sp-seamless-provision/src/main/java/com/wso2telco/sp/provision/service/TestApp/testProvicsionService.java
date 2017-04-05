@@ -40,20 +40,20 @@ public class testProvicsionService {
 
         serviceProviderDto = new ServiceProviderDto();
         //Service Provider Details
-        serviceProviderDto.setApplicationName("WSO2Telco1011");
-        serviceProviderDto.setDescription("App by Telco1011");
+        serviceProviderDto.setApplicationName("WSO2Telco1012");
+        serviceProviderDto.setDescription("App by Telco1012");
         serviceProviderDto.setAlwaysSendMappedLocalSubjectId(false);
         serviceProviderDto.setLocalClaimDialect(true);
-        serviceProviderDto.setInboundAuthKey("customkeygenerationTelcoWSO21011");
+        serviceProviderDto.setInboundAuthKey("customkeygenerationTelcoWSO21012");
         serviceProviderDto.setInboundAuthType("oauth2");
         serviceProviderDto.setConfidential(false);
         serviceProviderDto.setDefaultValue(null);
         serviceProviderDto.setPropertyName("oauthConsumerSecret");
         serviceProviderDto.setPropertyRequired(false);
-        serviceProviderDto.setPropertyValue("secretkeygenerationTelcoWSO21011");
+        serviceProviderDto.setPropertyValue("secretkeygenerationTelcoWSO21012");
         serviceProviderDto.setProvisioningEnabled(false);
         serviceProviderDto.setProvisioningUserStore("PRIMARY");
-        String idpRoles[] = {"WSO2Telco1011"};
+        String idpRoles[] = {"WSO2Telco1012"};
         serviceProviderDto.setIdpRoles(idpRoles);
         serviceProviderDto.setSaasApp(true);
         serviceProviderDto.setLocalAuthenticatorConfigsDisplayName("LOA");
@@ -71,30 +71,31 @@ public class testProvicsionService {
         //Set values for spProvisionConfig
 
         adminServiceDto = new AdminServiceDto();
-        adminServiceDto.setApplicationName("WSO2Telco1011");
+        adminServiceDto.setApplicationName("WSO2Telco1012");
         adminServiceDto.setOauthVersion("OAuth-2.0");
         adminServiceDto.setCallbackUrl("https://localhost:9443/playground2/oauth2.jsp");
         adminServiceDto.setGrantTypes("authorization_code implicit password client_credentials refresh_token urn:ietf:params:oauth:grant-type:saml2-bearer iwa:ntlm");
-        adminServiceDto.setOauthConsumerKey("customkeygenerationTelcoWSO21011");
-        adminServiceDto.setOauthConsumerSecret("secretkeygenerationTelcoWSO21011");
+        adminServiceDto.setOauthConsumerKey("customkeygenerationTelcoWSO21012");
+        adminServiceDto.setOauthConsumerSecret("secretkeygenerationTelcoWSO21012");
         adminServiceDto.setPkceMandatory(true);
         adminServiceDto.setPkceSupportPlain(false);
+
+        serviceProviderDto.setAdminServiceDto(adminServiceDto);
 
         adminServiceConfig = new AdminServiceConfig();
         adminServiceConfig.setPassword("admin");
         adminServiceConfig.setUserName("admin");
 
-        adminServiceDto.setAdminServiceConfig(adminServiceConfig);
 
         //Set values for SP Provision Config
         spProvisionConfig = new SpProvisionConfig();
-        spProvisionConfig.setAdminServiceDto(adminServiceDto);
-        spProvisionConfig.setDiscoveryServiceDto(null);
+        spProvisionConfig.setAdminServiceConfig(adminServiceConfig);
 
         //Set Values for SpProvisionDTO
         spProvisionDto.setServiceProviderDto(serviceProviderDto);
         spProvisionDto.setProvisionType(ProvisionType.LOCAL);
         spProvisionDto.setSpProvisionConfig(spProvisionConfig);
+        spProvisionDto.setDiscoveryServiceDto(null);
 
         ProvisioningService provisioningService = new ProvisioningServiceImpl();
         try {

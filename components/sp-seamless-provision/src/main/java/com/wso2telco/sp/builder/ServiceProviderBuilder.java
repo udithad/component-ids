@@ -41,7 +41,7 @@ public class ServiceProviderBuilder {
 
     public ServiceProviderBuilder(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig) throws SpProvisionServiceException {
 
-        buildOauthDataStructure(spProvisionConfig.getAdminServiceDto());
+        buildOauthDataStructure(serviceProviderDto.getAdminServiceDto());
         buildSpApplicationDataStructure(serviceProviderDto);
 
     }
