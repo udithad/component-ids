@@ -38,13 +38,7 @@ public class SeamlessProvisionClientAuthHandler extends AbstractClientAuthHandle
     @Override
     public boolean authenticateClient(OAuthTokenReqMessageContext tokReqMsgCtx) throws IdentityOAuth2Exception {
 
-        ServiceProviderDto serviceProviderDto = discoverServiceProvider(tokReqMsgCtx.getOauth2AccessTokenReqDTO());
-        if (serviceProviderDto != null && serviceProviderDto.getExistance().equals(ProvisionType.LOCAL)) {
-            // UPDATE SERVICE PROVIDER CREDENTIALS
-        } else {
-            throw new IdentityOAuth2Exception("Service Provider Not Found");
-        }
-
+        seamlessProvisioning(tokReqMsgCtx);
         boolean isAuthenticated = super.authenticateClient(tokReqMsgCtx);
 
         if (!isAuthenticated) {
@@ -61,6 +55,20 @@ public class SeamlessProvisionClientAuthHandler extends AbstractClientAuthHandle
             return true;
         }
 
+    }
+
+    private void seamlessProvisioning(OAuthTokenReqMessageContext tokReqMsgCtx) throws IdentityOAuth2Exception {
+        log.info("Initiating seamless provisioning procees");
+        if (mobileConnectConfigs.isSeamlessProvisioningEnabled()) {
+            ServiceProviderDto serviceProviderDto = discoverServiceProvider(tokReqMsgCtx.getOauth2AccessTokenReqDTO());
+            if (serviceProviderDto != null && !serviceProviderDto.getExistance().equals(ProvisionType.LOCAL)) {
+                log.info("Service Provider does not contain same credentials. Provisioning new credentials...");
+                // UPDATE SERVICE PROVIDER CREDENTIALS
+            } else {
+                log.info("Service Provider does not found LOCALLY OR REMOTELY... Auth token creation failed...");
+                throw new IdentityOAuth2Exception("Service Provider Not Found");
+            }
+        }
     }
 
     private ServiceProviderDto discoverServiceProvider(OAuth2AccessTokenReqDTO oAuth2AccessTokenReqDTO)

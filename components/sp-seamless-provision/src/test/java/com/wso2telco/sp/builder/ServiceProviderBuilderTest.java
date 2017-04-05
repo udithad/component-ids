@@ -2,23 +2,25 @@ package com.wso2telco.sp.builder;
 
 import org.junit.*;
 
+
+
+
 public class ServiceProviderBuilderTest {
 
     private static Integer ignore = null;
 
-    @BeforeClass
+    //@BeforeClass
     public static void initialize() {
         ignore = 1;
     }
 
-    @Test
+    //@Test
     public void testRevokeSpApplication() {
-
         Assert.assertEquals(ignore, ignore);
 
     }
 
-    @After
+    //@After
     public void collector() {
         ignore = 0;
     }

@@ -49,8 +49,6 @@ public abstract class RemoteDiscovery extends DiscoveryLocator {
 
     private static Log log = LogFactory.getLog(RemoteDiscovery.class);
 
-
-
     protected String getJsonWithDiscovery(String endPointUrl, String requestMethod, String data,
             Map<String, String> requestProperties) throws DicoveryException {
         String responseJson = null;
@@ -90,16 +88,19 @@ public abstract class RemoteDiscovery extends DiscoveryLocator {
     }
 
     private void setConnectionRequestMethod(String requestMethod, HttpURLConnection conn) throws ProtocolException {
+        log.info("Setting connection request method...");
         conn.setRequestMethod(requestMethod);
     }
 
     private void setRequestProperties(Map<String, String> requestPrperties, HttpURLConnection conn) {
+        log.info("Setting request properties...");
         for (Map.Entry<String, String> propEntry : requestPrperties.entrySet()) {
             conn.setRequestProperty(propEntry.getKey(), propEntry.getValue());
         }
     }
 
     private boolean setOutPutStrategy(String data, HttpURLConnection conn) {
+        log.info("Setting output strategy...");
         boolean isDoOutput = false;
         if (data != null && !data.isEmpty()) {
             conn.setDoOutput(true);
@@ -109,12 +110,15 @@ public abstract class RemoteDiscovery extends DiscoveryLocator {
     }
 
     private void writeToOutputStream(String data, HttpURLConnection conn) throws IOException {
+        log.info("Writing to output stream start...");
         OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream());
         wr.write(data);
         wr.flush();
+        log.info("Writing to output stream end...");
     }
 
     private String getJsonBy(InputStream inputStream) throws IOException {
+        log.info("Concatenating the JSON inputs...");
         BufferedReader br = new BufferedReader(new InputStreamReader((inputStream)));
         String output;
         StringBuilder jsonStrBuilder = new StringBuilder();
@@ -125,6 +129,7 @@ public abstract class RemoteDiscovery extends DiscoveryLocator {
     }
 
     protected String buildBasicAuthCode(String clientId, String clientSecret) {
+        log.info("Building the basic authcode for Client Id :" + clientId + " , client secret : " + clientSecret);
         String encodedBasicAuthCode = "";
         StringBuilder basicAuthStrBuilder = new StringBuilder();
         if (clientId != null && !clientId.isEmpty()) {
@@ -138,10 +143,5 @@ public abstract class RemoteDiscovery extends DiscoveryLocator {
         }
         return encodedBasicAuthCode;
     }
-
-
-
-
-
 
 }

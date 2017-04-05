@@ -18,11 +18,11 @@ import com.wso2telco.sp.entity.EksDiscovery;
 public class RemoteExcKeySecretDiscovery extends RemoteDiscovery {
 
     private static Log log = LogFactory.getLog(RemoteExcKeySecretDiscovery.class);
-    
+
     @Override
     public ServiceProviderDto servceProviderDiscovery(DiscoveryServiceConfig discoveryServiceConfig,
             DiscoveryServiceDto discoveryServiceDto) throws DicoveryException {
-        log.info("Service Provider Exchange Key Discovery Call");
+        log.info("EKS-> Service Provider Exchange Key Discovery Call");
         String encodedBasicAuthCode = buildBasicAuthCode(discoveryServiceDto.getClientId(),
                 discoveryServiceDto.getClientSecret());
         String requestMethod = HTTP_POST;
@@ -35,9 +35,9 @@ public class RemoteExcKeySecretDiscovery extends RemoteDiscovery {
                         requestProperties), EksDiscovery.class);
         return createServiceProviderDtoBy(eksDiscovery);
     }
-    
 
     private String buildEksEndPointUrl(DiscoveryServiceConfig discoveryServiceConfig) {
+        log.info("EKS-> Building end point url...");
         String endPointUrl = discoveryServiceConfig.getEksDiscoveryConfig().getServiceUrl() + QES_OPERATOR
                 + REDIRECT_URL + EQA_OPERATOR + discoveryServiceConfig.getEksDiscoveryConfig().getRedirectUrl();
         return endPointUrl;
@@ -45,23 +45,24 @@ public class RemoteExcKeySecretDiscovery extends RemoteDiscovery {
 
     private Map<String, String> buildRequestPropertiesEks(DiscoveryServiceConfig discoveryServiceConfig,
             DiscoveryServiceDto discoveryServiceDto, String encodedBasicAuthCode) {
+        log.info("EKS-> Building request properties...");
         Map<String, String> requestProperties = new HashMap<String, String>();
         requestProperties.put(CONTENT_TYPE_HEADER_KEY, CONTENT_TYPE_HEADER_VAL_TYPE_EKS);
         requestProperties.put(AUTHORIZATION_HEADER, BASIC + SPACE + encodedBasicAuthCode);
         return requestProperties;
     }
-    
 
     private ServiceProviderDto createServiceProviderDtoBy(EksDiscovery eksDiscovery) {
+        log.info("EKS-> Create service provider dto...");
         ServiceProviderDto serviceProviderDto = new ServiceProviderDto();
         if (eksDiscovery != null && eksDiscovery.getResponse() != null) {
             AdminServiceDto adminServiceDto = new AdminServiceDto();
             adminServiceDto.setOauthConsumerKey(eksDiscovery.getResponse().getClient_id());
             adminServiceDto.setOauthConsumerSecret(eksDiscovery.getResponse().getClient_secret());
             serviceProviderDto.setAdminServiceDto(adminServiceDto);
-            serviceProviderDto.setExistance(ProvisionType.REMOTE);
         }
+        serviceProviderDto.setExistance(ProvisionType.REMOTE);
         return serviceProviderDto;
     }
-    
+
 }

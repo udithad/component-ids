@@ -10,18 +10,19 @@ import com.google.gson.Gson;
 import com.wso2telco.core.spprovisionservice.sp.entity.AdminServiceDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.DiscoveryServiceConfig;
 import com.wso2telco.core.spprovisionservice.sp.entity.DiscoveryServiceDto;
+import com.wso2telco.core.spprovisionservice.sp.entity.ProvisionType;
 import com.wso2telco.core.spprovisionservice.sp.entity.ServiceProviderDto;
 import com.wso2telco.sp.discovery.exception.DicoveryException;
 import com.wso2telco.sp.entity.CrValidateRes;
 
-public class RemoteCredentialDiscovery extends RemoteDiscovery{
+public class RemoteCredentialDiscovery extends RemoteDiscovery {
 
     private static Log log = LogFactory.getLog(RemoteCredentialDiscovery.class);
-    
+
     @Override
     public ServiceProviderDto servceProviderDiscovery(DiscoveryServiceConfig discoveryServiceConfig,
             DiscoveryServiceDto discoveryServiceDto) throws DicoveryException {
-        log.info("Service Provider Credentail Discovery Call");
+        log.info("CR-> Service Provider Credentail Discovery Call");
         String encodedBasicAuthCode = buildBasicAuthCode(discoveryServiceDto.getClientId(),
                 discoveryServiceDto.getClientSecret());
         String requestMethod = HTTP_POST;
@@ -31,33 +32,41 @@ public class RemoteCredentialDiscovery extends RemoteDiscovery{
         CrValidateRes crValidateRes = new Gson()
                 .fromJson(getJsonWithDiscovery(buildCrEndPointUrl(discoveryServiceConfig, discoveryServiceDto),
                         requestMethod, null, requestProperties), CrValidateRes.class);
-        return createServiceProviderDtoBy(crValidateRes);
+        return createServiceProviderDtoBy(crValidateRes, discoveryServiceDto);
     }
-    
+
     private Map<String, String> buildRequestPropertiesCr(DiscoveryServiceConfig discoveryServiceConfig,
             DiscoveryServiceDto discoveryServiceDto, String encodedBasicAuthCode) {
+        log.info("CR-> Building request properties.");
         Map<String, String> requestProperties = new HashMap<String, String>();
         requestProperties.put(ACCEPT, CONTENT_TYPE_HEADER_VAL_TYPE_CR);
         requestProperties.put(AUTHORIZATION_HEADER, BASIC + SPACE + encodedBasicAuthCode);
         return requestProperties;
     }
-    
+
     private String buildCrEndPointUrl(DiscoveryServiceConfig discoveryServiceConfig,
             DiscoveryServiceDto discoveryServiceDto) {
+        log.info("CR-> Build endpoint url");
         String endPointUrl = discoveryServiceConfig.getCrValidateDiscoveryConfig().getServiceUrl() + QES_OPERATOR
                 + CLIENT_ID + EQA_OPERATOR + discoveryServiceDto.getClientId() + AMP_OPERATOR + CLIENT_SECRET
                 + EQA_OPERATOR + discoveryServiceDto.getClientSecret();
         return endPointUrl;
     }
-    
-    private ServiceProviderDto createServiceProviderDtoBy(CrValidateRes crValidateRes) {
+
+    private ServiceProviderDto createServiceProviderDtoBy(CrValidateRes crValidateRes,
+            DiscoveryServiceDto discoveryServiceDto) {
+        log.info("CR-> Create Service Provider DTO");
         ServiceProviderDto serviceProviderDto = new ServiceProviderDto();
-        if (crValidateRes != null && crValidateRes.getApplication() != null) {
+        if (crValidateRes != null && crValidateRes.getApplication() != null && discoveryServiceDto != null) {
             serviceProviderDto.setApplicationName(crValidateRes.getApplication().getAppName());
             AdminServiceDto adminServiceDto = new AdminServiceDto();
+            adminServiceDto.setOauthConsumerKey(discoveryServiceDto.getClientId());
+            adminServiceDto.setOauthConsumerSecret(discoveryServiceDto.getClientSecret());
             adminServiceDto.setCallbackUrl(crValidateRes.getApplication().getRedirectUri());
+            serviceProviderDto.setDescription(crValidateRes.getApplication().getDescription());
             serviceProviderDto.setAdminServiceDto(adminServiceDto);
         }
+        serviceProviderDto.setExistance(ProvisionType.REMOTE);
         return serviceProviderDto;
     }
 }

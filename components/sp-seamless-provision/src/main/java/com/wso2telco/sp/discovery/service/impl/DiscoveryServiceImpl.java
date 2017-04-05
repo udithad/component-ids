@@ -31,7 +31,7 @@ public class DiscoveryServiceImpl implements DiscoveryService {
                     discoveryServiceDto);
         } catch (DicoveryException e) {
             if (e.isSystemError()) {
-                log.error("Error Occured While Trying To Fetch Discovery Call " + e.getMessage());
+                log.error("Error Occured While Trying To Fetch Discovery Call :: Message = " + e.getMessage());
             } else {
                 log.info("Service Provider Does Not Exist." + e.getMessage());
             }

@@ -29,7 +29,7 @@ public class LocalDiscovery extends DiscoveryLocator {
         ValidationUtil.validateInuts(discoveryServiceDto.getSectorId(), discoveryServiceDto.getClientId());
         populateMsisdnFrom(discoveryServiceConfig, discoveryServiceDto);
         isAppAvailable = checkLocally(discoveryServiceConfig.isPcrServiceEnabled(), discoveryServiceDto.getSectorId(),
-                discoveryServiceDto.getClientId());
+                discoveryServiceDto.getClientId(), discoveryServiceDto.getClientSecret());
         if (!isAppAvailable) {
             serviceProviderDto = checkRemotlyDiscovery(discoveryServiceConfig, discoveryServiceDto);
         } else {
@@ -49,18 +49,26 @@ public class LocalDiscovery extends DiscoveryLocator {
     private ServiceProviderDto checkRemotlyDiscovery(DiscoveryServiceConfig discoveryServiceConfig,
             DiscoveryServiceDto discoveryServiceDto) throws DicoveryException {
         ServiceProviderDto serviceProviderDto = null;
-        serviceProviderDto = getNextDiscovery().servceProviderDiscovery(discoveryServiceConfig, discoveryServiceDto);
+        if (getNextDiscovery() != null) {
+            serviceProviderDto = getNextDiscovery().servceProviderDiscovery(discoveryServiceConfig,
+                    discoveryServiceDto);
+        }
 
         return serviceProviderDto;
     }
 
-    private boolean checkLocally(boolean isPcrServiceEnabled, String sectorId, String clientId)
+    private boolean checkLocally(boolean isPcrServiceEnabled, String sectorId, String clientId, String clientSecret)
             throws DicoveryException {
         boolean isAppAvailable = false;
         if (isPcrServiceEnabled) {
             isAppAvailable = checkSpAvailabilityInmemory(sectorId, clientId);
         } else {
             // Call SP-PrOVISIONING SERVICE GET BY CLIent id method
+            if (clientSecret != null && !clientSecret.isEmpty()) {
+                // check secret ==
+                // then return true
+                // else false
+            }
         }
         return isAppAvailable;
     }

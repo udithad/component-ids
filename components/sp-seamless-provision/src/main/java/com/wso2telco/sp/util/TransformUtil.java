@@ -18,7 +18,6 @@ public class TransformUtil {
         config.setEksDiscoveryConfig(transformEksDiscoveryConfig(discoveryConfig.getEksDiscoveryConfig()));
         config.setCrValidateDiscoveryConfig(
                 transoformCrValidateDiscoveryConfig(discoveryConfig.getCrValidateDiscoveryConfig()));
-        config.setDiscoverOnlyLocal(true);
         config.setPcrServiceEnabled(mobileConnectConfig.isPcrServiceEnabled());
         return config;
     }
@@ -42,10 +41,13 @@ public class TransformUtil {
         return eksDiscoveryConfig;
     }
 
-    public static DiscoveryServiceDto transofrmDiscoveryDto(String clientId,String callbackUrl) {
+    public static DiscoveryServiceDto transofrmDiscoveryDto(String clientId, String callbackUrl) {
         DiscoveryServiceDto discoveryServiceDto = new DiscoveryServiceDto();
         discoveryServiceDto.setClientId(clientId);
-        String sectorId = SectorUtil.getSectorIdFromUrl(callbackUrl);
+        String sectorId = null;
+        if (callbackUrl != null && !callbackUrl.isEmpty()) {
+            sectorId = SectorUtil.getSectorIdFromUrl(callbackUrl);
+        }
         discoveryServiceDto.setSectorId(sectorId);
         return discoveryServiceDto;
     }

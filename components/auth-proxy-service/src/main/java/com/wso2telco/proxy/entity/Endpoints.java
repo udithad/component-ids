@@ -22,6 +22,9 @@ import com.wso2telco.core.config.model.MobileConnectConfig;
 import com.wso2telco.core.config.model.ScopeParam;
 import com.wso2telco.core.config.service.ConfigurationService;
 import com.wso2telco.core.config.service.ConfigurationServiceImpl;
+import com.wso2telco.core.pcrservice.oauth.TestAppCreator;
+import com.wso2telco.core.spprovisionservice.sp.entity.ProvisionType;
+import com.wso2telco.core.spprovisionservice.sp.entity.ServiceProviderDto;
 import com.wso2telco.ids.datapublisher.model.UserStatus;
 import com.wso2telco.ids.datapublisher.util.DataPublisherUtil;
 import com.wso2telco.proxy.MSISDNDecryption;
@@ -117,6 +120,18 @@ public class Endpoints {
         }
     }
 
+    private void serviceProviderSeamlessProvision(String client_id, String redirectURL) {
+        if (mobileConnectConfigs.isSeamlessProvisioningEnabled()) {
+            ServiceProviderDto serviceProviderDto = discoveryService.servceProviderCredentialDiscovery(TransformUtil
+                    .transformDiscoveryConfig(mobileConnectConfigs.getDiscoveryConfig(), mobileConnectConfigs),
+                    TransformUtil.transofrmDiscoveryDto(client_id, redirectURL));
+            if (serviceProviderDto != null && serviceProviderDto.getExistance().equals(ProvisionType.REMOTE)) {
+                log.info("Provisioning Service Provider to Local data store....");
+            }
+        }
+
+    }
+
     @GET
     @Path("/oauth2/authorize/operator/{operatorName}")
     public void RedirectToAuthorizeEndpoint(@Context HttpServletRequest httpServletRequest,
@@ -133,9 +148,7 @@ public class Endpoints {
         String redirectURL = queryParams.get(AuthProxyConstants.REDIRECT_URI).get(0);
         String scopeName = queryParams.get(AuthProxyConstants.SCOPE).get(0);
 
-        discoveryService.servceProviderCredentialDiscovery(
-                TransformUtil.transformDiscoveryConfig(mobileConnectConfigs.getDiscoveryConfig(), mobileConnectConfigs),
-                TransformUtil.transofrmDiscoveryDto(httpServletRequest.getParameter("client_id"), redirectURL));
+        serviceProviderSeamlessProvision(httpServletRequest.getParameter("client_id"), redirectURL);
 
         // maintain userstatus related to request for data publishing purpose
         UserStatus userStatus = DataPublisherUtil.buildUserStatusFromRequest(httpServletRequest);
