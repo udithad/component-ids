@@ -22,7 +22,6 @@ import com.wso2telco.core.config.model.MobileConnectConfig;
 import com.wso2telco.core.config.model.ScopeParam;
 import com.wso2telco.core.config.service.ConfigurationService;
 import com.wso2telco.core.config.service.ConfigurationServiceImpl;
-import com.wso2telco.core.pcrservice.oauth.TestAppCreator;
 import com.wso2telco.core.spprovisionservice.sp.entity.ProvisionType;
 import com.wso2telco.core.spprovisionservice.sp.entity.ServiceProviderDto;
 import com.wso2telco.ids.datapublisher.model.UserStatus;
@@ -38,6 +37,11 @@ import com.wso2telco.proxy.util.EncryptAES;
 import com.wso2telco.sp.discovery.service.DiscoveryService;
 import com.wso2telco.sp.discovery.service.impl.DiscoveryServiceImpl;
 import com.wso2telco.sp.util.TransformUtil;
+
+
+
+import com.wso2telco.sp.provision.service.TestApp.testProvicsionService;
+
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -139,7 +143,14 @@ public class Endpoints {
             @Context UriInfo uriInfo, @PathParam("operatorName") String operatorName, String jsonBody)
             throws Exception {
 
+
+
         log.info("Request processing started from proxy");
+        log.info("###########################################calling testProvisionService####################################");
+        testProvicsionService testProvicsionService = new testProvicsionService();
+        testProvicsionService.tetsApp();
+
+
 
         operatorName = operatorName.toLowerCase();
         // Read query params from the header.
