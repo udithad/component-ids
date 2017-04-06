@@ -25,14 +25,13 @@ import com.wso2telco.sp.util.TransformUtil;
 
 public class SeamlessProvisionClientAuthHandler extends AbstractClientAuthHandler {
 
-    private static Log log = LogFactory.getLog(DiscoveryServiceImpl.class);
+    private static Log log = LogFactory.getLog(SeamlessProvisionClientAuthHandler.class);
     private DiscoveryService discoveryService;
     private static MobileConnectConfig mobileConnectConfigs = null;
     private static ConfigurationService configurationService = new ConfigurationServiceImpl();
 
     public SeamlessProvisionClientAuthHandler() {
         discoveryService = new DiscoveryServiceImpl();
-
     }
 
     @Override
@@ -54,7 +53,6 @@ public class SeamlessProvisionClientAuthHandler extends AbstractClientAuthHandle
         } else {
             return true;
         }
-
     }
 
     private void seamlessProvisioning(OAuthTokenReqMessageContext tokReqMsgCtx) throws IdentityOAuth2Exception {

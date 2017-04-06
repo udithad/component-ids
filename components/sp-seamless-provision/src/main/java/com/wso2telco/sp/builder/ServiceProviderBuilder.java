@@ -60,7 +60,7 @@ public class ServiceProviderBuilder {
 
         adminService = new OauthAdminServiceImpl();
 
-        if (serviceProviderDto != null) {
+        if (adminServiceDto != null) {
             try {
                 adminService.registerOAuthApplicationData(adminServiceDto);
             } catch (SpProvisionServiceException e) {
@@ -69,7 +69,6 @@ public class ServiceProviderBuilder {
         } else {
             log.error("oAuth data object doesn't have data for the registration");
         }
-
     }
 
     public ServiceProvider buildSpApplicationDataStructure(ServiceProviderDto serviceProviderDto) throws SpProvisionServiceException {

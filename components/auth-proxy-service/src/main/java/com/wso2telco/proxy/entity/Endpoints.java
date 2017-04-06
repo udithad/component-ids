@@ -22,10 +22,7 @@ import com.wso2telco.core.config.model.MobileConnectConfig;
 import com.wso2telco.core.config.model.ScopeParam;
 import com.wso2telco.core.config.service.ConfigurationService;
 import com.wso2telco.core.config.service.ConfigurationServiceImpl;
-import com.wso2telco.core.spprovisionservice.sp.entity.AdminServiceDto;
-import com.wso2telco.core.spprovisionservice.sp.entity.ProvisionType;
-import com.wso2telco.core.spprovisionservice.sp.entity.ServiceProviderDto;
-import com.wso2telco.core.spprovisionservice.sp.entity.SpProvisionDto;
+import com.wso2telco.core.spprovisionservice.sp.entity.*;
 import com.wso2telco.core.spprovisionservice.sp.exception.SpProvisionServiceException;
 import com.wso2telco.ids.datapublisher.model.UserStatus;
 import com.wso2telco.ids.datapublisher.util.DataPublisherUtil;
@@ -135,10 +132,12 @@ public class Endpoints {
         ServiceProviderDto serviceProviderDto = new ServiceProviderDto();
         SpProvisionDto spProvisionDto = new SpProvisionDto();
         AdminServiceDto adminServiceDto;
-        String applicationName = "WSO2Telco1018";
-        String description = "App by Telco1018";
-        String cutomerKey = "customkeygenerationTelcoWSO21018";
-        String secretKey = "secretkeygenerationTelcoWSO21018";
+        SpProvisionConfig spProvisionConfig = null;
+
+        String applicationName = "WSO2Telco1023";
+        String description = "App by Telco1023";
+        String cutomerKey = "customkeygenerationTelcoWSO21023";
+        String secretKey = "secretkeygenerationTelcoWSO21023";
         String callbackUrl = "https://localhost:9443/playground2/oauth2.jsp";
 
         if (mobileConnectConfigs.isSeamlessProvisioningEnabled()) {
@@ -187,6 +186,8 @@ public class Endpoints {
                 spProvisionDto.setProvisionType(ProvisionType.LOCAL);
                 spProvisionDto.setDiscoveryServiceDto(null);
 
+                spProvisionDto.setSpProvisionConfig(spProvisionConfig);
+
                 ProvisioningService provisioningService = new ProvisioningServiceImpl();
                 try {
                     provisioningService.provisionServiceProvider(spProvisionDto);
@@ -219,7 +220,7 @@ public class Endpoints {
         // check for forwarded trn Id
         String transactionId = DataPublisherUtil.getSessionID(httpServletRequest);
         if (StringUtils.isEmpty(transactionId)) {
-            // generate new trn id
+            // generate new turn id
             transactionId = UUID.randomUUID().toString();
         }
 
