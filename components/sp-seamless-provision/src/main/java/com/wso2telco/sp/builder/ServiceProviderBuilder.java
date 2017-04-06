@@ -43,47 +43,30 @@ public class ServiceProviderBuilder {
     private MobileConnectConfig.Config config = null;
     private ConfigurationService configurationService = new ConfigurationServiceImpl();
 
-    public ServiceProviderBuilder(){
-
-    }
-
-    public ServiceProviderBuilder(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig) throws SpProvisionServiceException {
+    public void buildServiceProvider(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig) throws SpProvisionServiceException {
         mobileConnectConfig = configurationService.getDataHolder().getMobileConnectConfig();
-        config  = new MobileConnectConfig.Config();
+        config = new MobileConnectConfig.Config();
 
-        if(serviceProviderDto != null){
+        if (serviceProviderDto != null) {
 
-            buildOauthDataStructure(serviceProviderDto);
+            buildOauthDataStructure(serviceProviderDto.getAdminServiceDto());
             buildSpApplicationDataStructure(serviceProviderDto);
-        }
-        else
-        {
+        } else {
             log.error("Service Provider details are empty");
         }
     }
 
-    public void buildOauthDataStructure(ServiceProviderDto serviceProviderDto) throws SpProvisionServiceException {
+    public void buildOauthDataStructure(AdminServiceDto adminServiceDto) throws SpProvisionServiceException {
 
         adminService = new OauthAdminServiceImpl();
 
-        if(serviceProviderDto != null){
-            config = mobileConnectConfig.getSpProvisionConfig().getConfig();
-            AdminServiceDto adminServiceDto = serviceProviderDto.getAdminServiceDto();
-
-            adminServiceDto.setOauthVersion(config.getoAuthVersion());
-            adminServiceDto.setGrantTypes(config.getGrantTypes());
-            adminServiceDto.setOauthConsumerKey(serviceProviderDto.getInboundAuthKey());
-            adminServiceDto.setOauthConsumerSecret(serviceProviderDto.getPropertyValue());
-            adminServiceDto.setPkceMandatory(config.isPkceMandatory());
-            adminServiceDto.setPkceSupportPlain(config.isPkceSupportPlain());
-
+        if (serviceProviderDto != null) {
             try {
                 adminService.registerOAuthApplicationData(adminServiceDto);
             } catch (SpProvisionServiceException e) {
                 throw new SpProvisionServiceException(e.getMessage());
             }
-        }
-        else{
+        } else {
             log.error("oAuth data object doesn't have data for the registration");
         }
 
@@ -95,26 +78,7 @@ public class ServiceProviderBuilder {
         String applicationName = serviceProviderDto.getApplicationName();
         ServiceProvider serviceProvider = null;
 
-        if(serviceProviderDto != null){
-
-            MobileConnectConfig.Config config = mobileConnectConfig.getSpProvisionConfig().getConfig();
-            serviceProviderDto.setAlwaysSendMappedLocalSubjectId(config.isAlwaysSendMappedLocalSubjectId());
-            serviceProviderDto.setLocalClaimDialect(config.isLocalClaimDialect());
-            serviceProviderDto.setInboundAuthType(config.getInboundAuthType());
-            serviceProviderDto.setConfidential(config.isConfidential());
-            serviceProviderDto.setDefaultValue(config.getDefaultValue());
-            serviceProviderDto.setPropertyName(config.getPropertyName());
-            serviceProviderDto.setPropertyRequired(config.isPropertyRequired());
-            serviceProviderDto.setProvisioningEnabled(config.isProvisioningEnabled());
-            serviceProviderDto.setProvisioningUserStore(config.getProvisioningUserStore());
-            String idpRoles[] = {serviceProviderDto.getApplicationName()};
-            serviceProviderDto.setIdpRoles(idpRoles);
-            serviceProviderDto.setSaasApp(config.isSaasApp());
-            serviceProviderDto.setLocalAuthenticatorConfigsDisplayName(config.getLocalAuthenticatorConfigsDisplayName());
-            serviceProviderDto.setLocalAuthenticatorConfigsEnabled(config.isLocalAuthenticatorConfigsEnabled());
-            serviceProviderDto.setLocalAuthenticatorConfigsName(config.getLocalAuthenticatorConfigsName());
-            serviceProviderDto.setLocalAuthenticatorConfigsValid(config.isLocalAuthenticatorConfigsValid());
-            serviceProviderDto.setLocalAuthenticatorConfigsAuthenticationType(config.getLocalAuthenticatorConfigsAuthenticationType());
+        if (serviceProviderDto != null) {
 
             spAppManagementService.createSpApplication(serviceProviderDto);
             serviceProvider = spAppManagementService.getSpApplicationData(applicationName);
@@ -130,7 +94,7 @@ public class ServiceProviderBuilder {
 
     public void reBuildOauthDataStructure(String oldConsumerKey, AdminServiceDto adminServiceDto) throws SpProvisionServiceException {
 
-        if(adminServiceDto != null){
+        if (adminServiceDto != null) {
             adminService = new OauthAdminServiceImpl();
             adminService.removeOAuthApplicationData(oldConsumerKey);
             adminService.registerOAuthApplicationData(adminServiceDto);
@@ -144,9 +108,9 @@ public class ServiceProviderBuilder {
         adminService = new OauthAdminServiceImpl();
         spAppManagementService = new SpAppManagementServiceImpl();
 
-        if(spAppManagementService.getSpApplicationData(applicationName) != null){
+        if (spAppManagementService.getSpApplicationData(applicationName) != null) {
             spAppManagementService.deleteSpApplication(applicationName);
-        } else{
+        } else {
             log.error("Given service Provider is not available");
         }
 

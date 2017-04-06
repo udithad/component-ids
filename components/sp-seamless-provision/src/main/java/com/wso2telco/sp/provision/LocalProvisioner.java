@@ -31,6 +31,7 @@ public class LocalProvisioner extends Provisioner {
     @Override
     public void provisionServiceProvider(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig) throws SpProvisionServiceException {
 
-        serviceProviderBuilder = new ServiceProviderBuilder(serviceProviderDto, spProvisionConfig);
+        serviceProviderBuilder = new ServiceProviderBuilder();
+        serviceProviderBuilder.buildServiceProvider(serviceProviderDto,spProvisionConfig);
     }
 }

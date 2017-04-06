@@ -22,7 +22,10 @@ import com.wso2telco.core.config.model.MobileConnectConfig;
 import com.wso2telco.core.config.model.ScopeParam;
 import com.wso2telco.core.config.service.ConfigurationService;
 import com.wso2telco.core.config.service.ConfigurationServiceImpl;
-import com.wso2telco.core.spprovisionservice.sp.entity.*;
+import com.wso2telco.core.spprovisionservice.sp.entity.AdminServiceDto;
+import com.wso2telco.core.spprovisionservice.sp.entity.ProvisionType;
+import com.wso2telco.core.spprovisionservice.sp.entity.ServiceProviderDto;
+import com.wso2telco.core.spprovisionservice.sp.entity.SpProvisionDto;
 import com.wso2telco.core.spprovisionservice.sp.exception.SpProvisionServiceException;
 import com.wso2telco.ids.datapublisher.model.UserStatus;
 import com.wso2telco.ids.datapublisher.util.DataPublisherUtil;
@@ -45,6 +48,7 @@ import org.wso2.carbon.identity.application.authentication.framework.exception.A
 import org.wso2.carbon.identity.user.registration.stub.*;
 import org.wso2.carbon.identity.user.registration.stub.dto.UserDTO;
 import org.wso2.carbon.identity.user.registration.stub.dto.UserFieldDTO;
+
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
@@ -128,44 +132,77 @@ public class Endpoints {
 //            }
 //        }
 
-        ServiceProviderDto serviceProviderDto = null;
+        ServiceProviderDto serviceProviderDto = new ServiceProviderDto();
         SpProvisionDto spProvisionDto = new SpProvisionDto();
-        AdminServiceDto adminServiceDto ;
+        AdminServiceDto adminServiceDto;
+        String applicationName = "WSO2Telco1018";
+        String description = "App by Telco1018";
+        String cutomerKey = "customkeygenerationTelcoWSO21018";
+        String secretKey = "secretkeygenerationTelcoWSO21018";
+        String callbackUrl = "https://localhost:9443/playground2/oauth2.jsp";
 
         if (mobileConnectConfigs.isSeamlessProvisioningEnabled()) {
-            serviceProviderDto.setApplicationName("WSO2Telco1016");
-            serviceProviderDto.setDescription("App by Telco1016");
-            serviceProviderDto.setInboundAuthKey("customkeygenerationTelcoWSO21016");
-            serviceProviderDto.setPropertyValue("secretkeygenerationTelcoWSO21016");
 
-            //Set values for spProvisionConfig
+            MobileConnectConfig.Config config = mobileConnectConfigs.getSpProvisionConfig().getConfig();
+            if (config != null) {
+                serviceProviderDto.setApplicationName(applicationName);
+                serviceProviderDto.setDescription(description);
+                serviceProviderDto.setInboundAuthKey(cutomerKey);
+                serviceProviderDto.setPropertyValue(secretKey);
+                serviceProviderDto.setAlwaysSendMappedLocalSubjectId(config.isAlwaysSendMappedLocalSubjectId());
+                serviceProviderDto.setLocalClaimDialect(config.isLocalClaimDialect());
+                serviceProviderDto.setInboundAuthType(config.getInboundAuthType());
+                serviceProviderDto.setConfidential(config.isConfidential());
+                serviceProviderDto.setDefaultValue(config.getDefaultValue());
+                serviceProviderDto.setPropertyName(config.getPropertyName());
+                serviceProviderDto.setPropertyRequired(config.isPropertyRequired());
+                serviceProviderDto.setProvisioningEnabled(config.isProvisioningEnabled());
+                serviceProviderDto.setProvisioningUserStore(config.getProvisioningUserStore());
+                String idpRoles[] = {applicationName};
+                serviceProviderDto.setIdpRoles(idpRoles);
+                serviceProviderDto.setSaasApp(config.isSaasApp());
+                serviceProviderDto.setLocalAuthenticatorConfigsDisplayName(config.getLocalAuthenticatorConfigsDisplayName());
+                serviceProviderDto.setLocalAuthenticatorConfigsEnabled(config.isLocalAuthenticatorConfigsEnabled());
+                serviceProviderDto.setLocalAuthenticatorConfigsName(config.getLocalAuthenticatorConfigsName());
+                serviceProviderDto.setLocalAuthenticatorConfigsValid(config.isLocalAuthenticatorConfigsValid());
+                serviceProviderDto.setLocalAuthenticatorConfigsAuthenticationType(config.getLocalAuthenticatorConfigsAuthenticationType());
 
-            adminServiceDto = new AdminServiceDto();
-            adminServiceDto.setApplicationName("WSO2Telco1016");
-            adminServiceDto.setCallbackUrl("https://localhost:9443/playground2/oauth2.jsp");
+                //Set values for spProvisionConfig
 
-            serviceProviderDto.setAdminServiceDto(adminServiceDto);
-            serviceProviderDto.setExistance(ProvisionType.LOCAL);
+                adminServiceDto = new AdminServiceDto();
+                adminServiceDto.setApplicationName(applicationName);
+                adminServiceDto.setCallbackUrl(callbackUrl);
+                adminServiceDto.setOauthVersion(config.getoAuthVersion());
+                adminServiceDto.setGrantTypes(config.getGrantTypes());
+                adminServiceDto.setOauthConsumerKey(cutomerKey);
+                adminServiceDto.setOauthConsumerSecret(secretKey);
+                adminServiceDto.setPkceMandatory(config.isPkceMandatory());
+                adminServiceDto.setPkceSupportPlain(config.isPkceSupportPlain());
 
-            //Set Values for SpProvisionDTO
-            spProvisionDto.setServiceProviderDto(serviceProviderDto);
-            spProvisionDto.setProvisionType(ProvisionType.LOCAL);
-            spProvisionDto.setDiscoveryServiceDto(null);
+                serviceProviderDto.setAdminServiceDto(adminServiceDto);
+                serviceProviderDto.setExistance(ProvisionType.LOCAL);
 
-            ProvisioningService provisioningService = new ProvisioningServiceImpl();
-            try {
-                provisioningService.provisionServiceProvider(spProvisionDto);
-            } catch (SpProvisionServiceException e) {
-                log.error("Error occurred in provisioning a Service Provider "+e.getMessage());
-            }
+                //Set Values for SpProvisionDTO
+                spProvisionDto.setServiceProviderDto(serviceProviderDto);
+                spProvisionDto.setProvisionType(ProvisionType.LOCAL);
+                spProvisionDto.setDiscoveryServiceDto(null);
+
+                ProvisioningService provisioningService = new ProvisioningServiceImpl();
+                try {
+                    provisioningService.provisionServiceProvider(spProvisionDto);
+                } catch (SpProvisionServiceException e) {
+                    log.error("Error occurred in provisioning a Service Provider " + e.getMessage());
+                }
+            } else
+                log.error("Config null");
         }
     }
 
     @GET
     @Path("/oauth2/authorize/operator/{operatorName}")
     public void RedirectToAuthorizeEndpoint(@Context HttpServletRequest httpServletRequest,
-            @Context HttpServletResponse httpServletResponse, @Context HttpHeaders httpHeaders,
-            @Context UriInfo uriInfo, @PathParam("operatorName") String operatorName, String jsonBody)
+                                            @Context HttpServletResponse httpServletResponse, @Context HttpHeaders httpHeaders,
+                                            @Context UriInfo uriInfo, @PathParam("operatorName") String operatorName, String jsonBody)
             throws Exception {
 
         operatorName = operatorName.toLowerCase();
@@ -356,7 +393,7 @@ public class Endpoints {
      * @throws ConfigurationException
      */
     private ScopeParam validateAndSetScopeParameters(String loginHint, String msisdnHeader, String scope,
-            RedirectUrlInfo redirectUrlInfo, UserStatus userStatus)
+                                                     RedirectUrlInfo redirectUrlInfo, UserStatus userStatus)
             throws AuthenticationFailedException, ConfigurationException {
         // TODO: get all scope related params. This should be move to a initialization method or add to cache later
         ScopeParam scopeParam = getScopeParam(scope, userStatus);
@@ -465,7 +502,7 @@ public class Endpoints {
      * @throws AuthenticationFailedException
      */
     private String retunFormatVerfiedPlainTextLoginHint(String loginHint,
-            List<LoginHintFormatDetails> loginHintAllowedFormatDetailsList, UserStatus userStatus)
+                                                        List<LoginHintFormatDetails> loginHintAllowedFormatDetailsList, UserStatus userStatus)
             throws AuthenticationFailedException {
         boolean isValidFormatType = false; // msisdn/loginhint should be a either of defined formats
 
@@ -473,53 +510,53 @@ public class Endpoints {
         for (LoginHintFormatDetails loginHintFormatDetails : loginHintAllowedFormatDetailsList) {
 
             switch (loginHintFormatDetails.getFormatType()) {
-            case PLAINTEXT:
-                if (log.isDebugEnabled()) {
-                    log.debug("Plain text login hint : " + plainTextLoginHint);
-                }
-                if (StringUtils.isNotEmpty(loginHint) && (!loginHint.startsWith(LOGIN_HINT_ENCRYPTED_PREFIX)
-                        && !loginHint.startsWith(LOGIN_HINT_NOENCRYPTED_PREFIX))) {
-                    plainTextLoginHint = loginHint;
-                    isValidFormatType = true;
-                }
-                break;
-            case ENCRYPTED:
-                String decryptAlgorithm = loginHintFormatDetails.getDecryptAlgorithm();
-                if (StringUtils.isNotEmpty(loginHint)) {
-                    if (loginHint.startsWith(LOGIN_HINT_ENCRYPTED_PREFIX)) {
-                        String decrypted = null;
-                        try {
-                            // decrypt msisdn using given algorithm
-                            decrypted = Decrypt.decryptData(loginHint.replace(LOGIN_HINT_ENCRYPTED_PREFIX, ""),
-                                    decryptAlgorithm);
-                            if (log.isDebugEnabled()) {
-                                log.debug("Decrypted login hint : " + decrypted);
-                            }
-                            plainTextLoginHint = decrypted.substring(0, decrypted.indexOf(LOGIN_HINT_SEPARATOR));
-                            if (log.isDebugEnabled()) {
-                                log.debug("MSISDN by encrypted login hint : " + plainTextLoginHint);
-                            }
-                            isValidFormatType = true;
-                        } catch (Exception e) {
-                            log.error("Error while decrypting login hint : " + loginHint, e);
-                        }
+                case PLAINTEXT:
+                    if (log.isDebugEnabled()) {
+                        log.debug("Plain text login hint : " + plainTextLoginHint);
                     }
-                }
-                break;
-            case MSISDN:
-                if (StringUtils.isNotEmpty(loginHint)) {
-                    if (loginHint.startsWith(LOGIN_HINT_NOENCRYPTED_PREFIX)) {
-                        plainTextLoginHint = loginHint.replace(LOGIN_HINT_NOENCRYPTED_PREFIX, "");
-                        if (log.isDebugEnabled()) {
-                            log.debug("MSISDN by login hint: " + plainTextLoginHint);
-                        }
+                    if (StringUtils.isNotEmpty(loginHint) && (!loginHint.startsWith(LOGIN_HINT_ENCRYPTED_PREFIX)
+                            && !loginHint.startsWith(LOGIN_HINT_NOENCRYPTED_PREFIX))) {
+                        plainTextLoginHint = loginHint;
                         isValidFormatType = true;
                     }
-                }
-                break;
-            default:
-                log.warn("Invalid Login Hint format - " + loginHintFormatDetails.getFormatType());
-                break;
+                    break;
+                case ENCRYPTED:
+                    String decryptAlgorithm = loginHintFormatDetails.getDecryptAlgorithm();
+                    if (StringUtils.isNotEmpty(loginHint)) {
+                        if (loginHint.startsWith(LOGIN_HINT_ENCRYPTED_PREFIX)) {
+                            String decrypted = null;
+                            try {
+                                // decrypt msisdn using given algorithm
+                                decrypted = Decrypt.decryptData(loginHint.replace(LOGIN_HINT_ENCRYPTED_PREFIX, ""),
+                                        decryptAlgorithm);
+                                if (log.isDebugEnabled()) {
+                                    log.debug("Decrypted login hint : " + decrypted);
+                                }
+                                plainTextLoginHint = decrypted.substring(0, decrypted.indexOf(LOGIN_HINT_SEPARATOR));
+                                if (log.isDebugEnabled()) {
+                                    log.debug("MSISDN by encrypted login hint : " + plainTextLoginHint);
+                                }
+                                isValidFormatType = true;
+                            } catch (Exception e) {
+                                log.error("Error while decrypting login hint : " + loginHint, e);
+                            }
+                        }
+                    }
+                    break;
+                case MSISDN:
+                    if (StringUtils.isNotEmpty(loginHint)) {
+                        if (loginHint.startsWith(LOGIN_HINT_NOENCRYPTED_PREFIX)) {
+                            plainTextLoginHint = loginHint.replace(LOGIN_HINT_NOENCRYPTED_PREFIX, "");
+                            if (log.isDebugEnabled()) {
+                                log.debug("MSISDN by login hint: " + plainTextLoginHint);
+                            }
+                            isValidFormatType = true;
+                        }
+                    }
+                    break;
+                default:
+                    log.warn("Invalid Login Hint format - " + loginHintFormatDetails.getFormatType());
+                    break;
             }
 
             if (isValidFormatType) {
@@ -546,45 +583,45 @@ public class Endpoints {
 
         for (LoginHintFormatDetails loginHintFormatDetails : scopeParam.getLoginHintFormat()) {
             switch (loginHintFormatDetails.getFormatType()) {
-            case PLAINTEXT:
-                if (StringUtils.isNotEmpty(loginHint)) {
-                    msisdn = loginHint;
-                }
-                isValidFormatType = true;
-                break;
-            case ENCRYPTED:
-                String decryptAlgorithm = loginHintFormatDetails.getDecryptAlgorithm();
-                if (StringUtils.isNotEmpty(loginHint)) {
-                    if (loginHint.startsWith(LOGIN_HINT_ENCRYPTED_PREFIX)) {
-                        String decrypted = null;
-                        try {
-                            // decrypt msisdn using given algorithm
-                            decrypted = Decrypt.decryptData(loginHint.replace(LOGIN_HINT_ENCRYPTED_PREFIX, ""),
-                                    decryptAlgorithm);
-                            msisdn = decrypted.substring(0, decrypted.indexOf(LOGIN_HINT_SEPARATOR));
-                            isValidFormatType = true;
-                            break;
-                        } catch (Exception e) {
-                            log.error("Error while decrypting login hint : " + loginHint, e);
-                        }
+                case PLAINTEXT:
+                    if (StringUtils.isNotEmpty(loginHint)) {
+                        msisdn = loginHint;
                     }
-                } else {
                     isValidFormatType = true;
                     break;
-                }
-            case MSISDN:
-                if (StringUtils.isNotEmpty(loginHint)) {
-                    if (loginHint.startsWith(LOGIN_HINT_NOENCRYPTED_PREFIX)) {
-                        msisdn = loginHint.replace(LOGIN_HINT_NOENCRYPTED_PREFIX, "");
+                case ENCRYPTED:
+                    String decryptAlgorithm = loginHintFormatDetails.getDecryptAlgorithm();
+                    if (StringUtils.isNotEmpty(loginHint)) {
+                        if (loginHint.startsWith(LOGIN_HINT_ENCRYPTED_PREFIX)) {
+                            String decrypted = null;
+                            try {
+                                // decrypt msisdn using given algorithm
+                                decrypted = Decrypt.decryptData(loginHint.replace(LOGIN_HINT_ENCRYPTED_PREFIX, ""),
+                                        decryptAlgorithm);
+                                msisdn = decrypted.substring(0, decrypted.indexOf(LOGIN_HINT_SEPARATOR));
+                                isValidFormatType = true;
+                                break;
+                            } catch (Exception e) {
+                                log.error("Error while decrypting login hint : " + loginHint, e);
+                            }
+                        }
+                    } else {
                         isValidFormatType = true;
                         break;
                     }
-                } else {
-                    isValidFormatType = true;
-                    break;
-                }
-            default:
-                log.warn("Invalid Login Hint format - " + loginHintFormatDetails.getFormatType());
+                case MSISDN:
+                    if (StringUtils.isNotEmpty(loginHint)) {
+                        if (loginHint.startsWith(LOGIN_HINT_NOENCRYPTED_PREFIX)) {
+                            msisdn = loginHint.replace(LOGIN_HINT_NOENCRYPTED_PREFIX, "");
+                            isValidFormatType = true;
+                            break;
+                        }
+                    } else {
+                        isValidFormatType = true;
+                        break;
+                    }
+                default:
+                    log.warn("Invalid Login Hint format - " + loginHintFormatDetails.getFormatType());
             }
 
             // msisdn/loginhint should be a either of defined formats
