@@ -16,6 +16,9 @@
 
 package com.wso2telco.sp.builder;
 
+import com.wso2telco.core.config.model.MobileConnectConfig;
+import com.wso2telco.core.config.service.ConfigurationService;
+import com.wso2telco.core.config.service.ConfigurationServiceImpl;
 import com.wso2telco.core.spprovisionservice.external.admin.service.OauthAdminService;
 import com.wso2telco.core.spprovisionservice.external.admin.service.SpAppManagementService;
 import com.wso2telco.core.spprovisionservice.external.admin.service.dataTransform.TransformServiceProviderDto;
@@ -36,54 +39,119 @@ public class ServiceProviderBuilder {
     private AdminServiceDto adminserviceDto = null;
     private ServiceProviderDto serviceProviderDto = null;
     private static Log log = LogFactory.getLog(ServiceProviderBuilder.class);
+    private MobileConnectConfig mobileConnectConfig = null;
+    private MobileConnectConfig.Config config = null;
+    private ConfigurationService configurationService = new ConfigurationServiceImpl();
 
-    public ServiceProviderBuilder(){}
-
-    public ServiceProviderBuilder(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig) throws SpProvisionServiceException {
-
-        buildOauthDataStructure(serviceProviderDto.getAdminServiceDto());
-        buildSpApplicationDataStructure(serviceProviderDto);
+    public ServiceProviderBuilder(){
 
     }
 
-    public void buildOauthDataStructure(AdminServiceDto adminServiceDto) throws SpProvisionServiceException {
+    public ServiceProviderBuilder(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig) throws SpProvisionServiceException {
+        mobileConnectConfig = configurationService.getDataHolder().getMobileConnectConfig();
+        config  = new MobileConnectConfig.Config();
+
+        if(serviceProviderDto != null){
+
+            buildOauthDataStructure(serviceProviderDto);
+            buildSpApplicationDataStructure(serviceProviderDto);
+        }
+        else
+        {
+            log.error("Service Provider details are empty");
+        }
+    }
+
+    public void buildOauthDataStructure(ServiceProviderDto serviceProviderDto) throws SpProvisionServiceException {
 
         adminService = new OauthAdminServiceImpl();
-        try {
-            adminService.registerOAuthApplicationData(adminServiceDto);
-        } catch (SpProvisionServiceException e) {
-            throw new SpProvisionServiceException(e.getMessage());
+
+        if(serviceProviderDto != null){
+            config = mobileConnectConfig.getSpProvisionConfig().getConfig();
+            AdminServiceDto adminServiceDto = serviceProviderDto.getAdminServiceDto();
+
+            adminServiceDto.setOauthVersion(config.getoAuthVersion());
+            adminServiceDto.setGrantTypes(config.getGrantTypes());
+            adminServiceDto.setOauthConsumerKey(serviceProviderDto.getInboundAuthKey());
+            adminServiceDto.setOauthConsumerSecret(serviceProviderDto.getPropertyValue());
+            adminServiceDto.setPkceMandatory(config.isPkceMandatory());
+            adminServiceDto.setPkceSupportPlain(config.isPkceSupportPlain());
+
+            try {
+                adminService.registerOAuthApplicationData(adminServiceDto);
+            } catch (SpProvisionServiceException e) {
+                throw new SpProvisionServiceException(e.getMessage());
+            }
         }
+        else{
+            log.error("oAuth data object doesn't have data for the registration");
+        }
+
     }
 
     public ServiceProvider buildSpApplicationDataStructure(ServiceProviderDto serviceProviderDto) throws SpProvisionServiceException {
 
         spAppManagementService = new SpAppManagementServiceImpl();
         String applicationName = serviceProviderDto.getApplicationName();
-        ServiceProvider serviceProvider;
+        ServiceProvider serviceProvider = null;
 
-        spAppManagementService.createSpApplication(serviceProviderDto);
-        serviceProvider = spAppManagementService.getSpApplicationData(applicationName);
+        if(serviceProviderDto != null){
 
-        if (serviceProvider != null) {
-            spAppManagementService.updateSpApplication(serviceProviderDto);
+            MobileConnectConfig.Config config = mobileConnectConfig.getSpProvisionConfig().getConfig();
+            serviceProviderDto.setAlwaysSendMappedLocalSubjectId(config.isAlwaysSendMappedLocalSubjectId());
+            serviceProviderDto.setLocalClaimDialect(config.isLocalClaimDialect());
+            serviceProviderDto.setInboundAuthType(config.getInboundAuthType());
+            serviceProviderDto.setConfidential(config.isConfidential());
+            serviceProviderDto.setDefaultValue(config.getDefaultValue());
+            serviceProviderDto.setPropertyName(config.getPropertyName());
+            serviceProviderDto.setPropertyRequired(config.isPropertyRequired());
+            serviceProviderDto.setProvisioningEnabled(config.isProvisioningEnabled());
+            serviceProviderDto.setProvisioningUserStore(config.getProvisioningUserStore());
+            String idpRoles[] = {serviceProviderDto.getApplicationName()};
+            serviceProviderDto.setIdpRoles(idpRoles);
+            serviceProviderDto.setSaasApp(config.isSaasApp());
+            serviceProviderDto.setLocalAuthenticatorConfigsDisplayName(config.getLocalAuthenticatorConfigsDisplayName());
+            serviceProviderDto.setLocalAuthenticatorConfigsEnabled(config.isLocalAuthenticatorConfigsEnabled());
+            serviceProviderDto.setLocalAuthenticatorConfigsName(config.getLocalAuthenticatorConfigsName());
+            serviceProviderDto.setLocalAuthenticatorConfigsValid(config.isLocalAuthenticatorConfigsValid());
+            serviceProviderDto.setLocalAuthenticatorConfigsAuthenticationType(config.getLocalAuthenticatorConfigsAuthenticationType());
+
+            spAppManagementService.createSpApplication(serviceProviderDto);
+            serviceProvider = spAppManagementService.getSpApplicationData(applicationName);
+
+            if (serviceProvider != null) {
+                spAppManagementService.updateSpApplication(serviceProviderDto);
+            }
+            serviceProvider = spAppManagementService.getSpApplicationData(applicationName);
         }
-        serviceProvider = spAppManagementService.getSpApplicationData(applicationName);
+
         return serviceProvider;
     }
 
     public void reBuildOauthDataStructure(String oldConsumerKey, AdminServiceDto adminServiceDto) throws SpProvisionServiceException {
 
-        adminService = new OauthAdminServiceImpl();
-        adminService.removeOAuthApplicationData(oldConsumerKey);
-        adminService.registerOAuthApplicationData(adminServiceDto);
+        if(adminServiceDto != null){
+            adminService = new OauthAdminServiceImpl();
+            adminService.removeOAuthApplicationData(oldConsumerKey);
+            adminService.registerOAuthApplicationData(adminServiceDto);
+        }
+
     }
 
     public void revokeSpApplication(String oldConsumerKey, String applicationName) throws SpProvisionServiceException {
+
+
         adminService = new OauthAdminServiceImpl();
         spAppManagementService = new SpAppManagementServiceImpl();
+
+        if(spAppManagementService.getSpApplicationData(applicationName) != null){
+            spAppManagementService.deleteSpApplication(applicationName);
+        } else{
+            log.error("Given service Provider is not available");
+        }
+
         adminService.removeOAuthApplicationData(oldConsumerKey);
-        spAppManagementService.deleteSpApplication(applicationName);
+
     }
 
     public ServiceProviderDto getServiceProviderDetails(String applicationName) throws SpProvisionServiceException {

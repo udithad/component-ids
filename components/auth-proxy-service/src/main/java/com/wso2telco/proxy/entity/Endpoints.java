@@ -22,8 +22,8 @@ import com.wso2telco.core.config.model.MobileConnectConfig;
 import com.wso2telco.core.config.model.ScopeParam;
 import com.wso2telco.core.config.service.ConfigurationService;
 import com.wso2telco.core.config.service.ConfigurationServiceImpl;
-import com.wso2telco.core.spprovisionservice.sp.entity.ProvisionType;
-import com.wso2telco.core.spprovisionservice.sp.entity.ServiceProviderDto;
+import com.wso2telco.core.spprovisionservice.sp.entity.*;
+import com.wso2telco.core.spprovisionservice.sp.exception.SpProvisionServiceException;
 import com.wso2telco.ids.datapublisher.model.UserStatus;
 import com.wso2telco.ids.datapublisher.util.DataPublisherUtil;
 import com.wso2telco.proxy.MSISDNDecryption;
@@ -36,13 +36,8 @@ import com.wso2telco.proxy.util.Decrypt;
 import com.wso2telco.proxy.util.EncryptAES;
 import com.wso2telco.sp.discovery.service.DiscoveryService;
 import com.wso2telco.sp.discovery.service.impl.DiscoveryServiceImpl;
-import com.wso2telco.sp.util.TransformUtil;
-
-
-
-import com.wso2telco.sp.provision.service.TestApp.testProvicsionService;
-
-
+import com.wso2telco.sp.provision.service.ProvisioningService;
+import com.wso2telco.sp.provision.service.impl.ProvisioningServiceImpl;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -50,7 +45,6 @@ import org.wso2.carbon.identity.application.authentication.framework.exception.A
 import org.wso2.carbon.identity.user.registration.stub.*;
 import org.wso2.carbon.identity.user.registration.stub.dto.UserDTO;
 import org.wso2.carbon.identity.user.registration.stub.dto.UserFieldDTO;
-
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
@@ -125,15 +119,46 @@ public class Endpoints {
     }
 
     private void serviceProviderSeamlessProvision(String client_id, String redirectURL) {
+//        if (mobileConnectConfigs.isSeamlessProvisioningEnabled()) {
+//            ServiceProviderDto serviceProviderDto = discoveryService.servceProviderCredentialDiscovery(TransformUtil
+//                    .transformDiscoveryConfig(mobileConnectConfigs.getDiscoveryConfig(), mobileConnectConfigs),
+//                    TransformUtil.transofrmDiscoveryDto(client_id, redirectURL));
+//            if (serviceProviderDto != null && serviceProviderDto.getExistance().equals(ProvisionType.REMOTE)) {
+//                log.info("Provisioning Service Provider to Local data store....");
+//            }
+//        }
+
+        ServiceProviderDto serviceProviderDto = null;
+        SpProvisionDto spProvisionDto = new SpProvisionDto();
+        AdminServiceDto adminServiceDto ;
+
         if (mobileConnectConfigs.isSeamlessProvisioningEnabled()) {
-            ServiceProviderDto serviceProviderDto = discoveryService.servceProviderCredentialDiscovery(TransformUtil
-                    .transformDiscoveryConfig(mobileConnectConfigs.getDiscoveryConfig(), mobileConnectConfigs),
-                    TransformUtil.transofrmDiscoveryDto(client_id, redirectURL));
-            if (serviceProviderDto != null && serviceProviderDto.getExistance().equals(ProvisionType.REMOTE)) {
-                log.info("Provisioning Service Provider to Local data store....");
+            serviceProviderDto.setApplicationName("WSO2Telco1016");
+            serviceProviderDto.setDescription("App by Telco1016");
+            serviceProviderDto.setInboundAuthKey("customkeygenerationTelcoWSO21016");
+            serviceProviderDto.setPropertyValue("secretkeygenerationTelcoWSO21016");
+
+            //Set values for spProvisionConfig
+
+            adminServiceDto = new AdminServiceDto();
+            adminServiceDto.setApplicationName("WSO2Telco1016");
+            adminServiceDto.setCallbackUrl("https://localhost:9443/playground2/oauth2.jsp");
+
+            serviceProviderDto.setAdminServiceDto(adminServiceDto);
+            serviceProviderDto.setExistance(ProvisionType.LOCAL);
+
+            //Set Values for SpProvisionDTO
+            spProvisionDto.setServiceProviderDto(serviceProviderDto);
+            spProvisionDto.setProvisionType(ProvisionType.LOCAL);
+            spProvisionDto.setDiscoveryServiceDto(null);
+
+            ProvisioningService provisioningService = new ProvisioningServiceImpl();
+            try {
+                provisioningService.provisionServiceProvider(spProvisionDto);
+            } catch (SpProvisionServiceException e) {
+                log.error("Error occurred in provisioning a Service Provider "+e.getMessage());
             }
         }
-
     }
 
     @GET
@@ -142,15 +167,6 @@ public class Endpoints {
             @Context HttpServletResponse httpServletResponse, @Context HttpHeaders httpHeaders,
             @Context UriInfo uriInfo, @PathParam("operatorName") String operatorName, String jsonBody)
             throws Exception {
-
-
-
-        log.info("Request processing started from proxy");
-        log.info("###########################################calling testProvisionService####################################");
-        testProvicsionService testProvicsionService = new testProvicsionService();
-        testProvicsionService.tetsApp();
-
-
 
         operatorName = operatorName.toLowerCase();
         // Read query params from the header.
