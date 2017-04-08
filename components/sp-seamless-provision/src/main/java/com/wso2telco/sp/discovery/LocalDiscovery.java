@@ -28,11 +28,18 @@ import com.wso2telco.core.spprovisionservice.sp.entity.ProvisionType;
 import com.wso2telco.core.spprovisionservice.sp.entity.ServiceProviderDto;
 import com.wso2telco.sp.discovery.exception.DicoveryException;
 import com.wso2telco.sp.internal.SpProvisionPcrDataHolder;
+import com.wso2telco.sp.provision.service.ProvisioningService;
+import com.wso2telco.sp.provision.service.impl.ProvisioningServiceImpl;
 import com.wso2telco.sp.util.ValidationUtil;
 
 public class LocalDiscovery extends DiscoveryLocator {
 
     private static Log log = LogFactory.getLog(LocalDiscovery.class);
+    private ProvisioningService provisioningService;
+
+    public LocalDiscovery() {
+        provisioningService = new ProvisioningServiceImpl();
+    }
 
     @Override
     public ServiceProviderDto servceProviderDiscovery(DiscoveryServiceConfig discoveryServiceConfig,
@@ -79,11 +86,15 @@ public class LocalDiscovery extends DiscoveryLocator {
         if (isPcrServiceEnabled) {
             isAppAvailable = checkSpAvailabilityInmemory(sectorId, clientId);
         } else {
-            // Call SP-PrOVISIONING SERVICE GET BY CLIent id method
-            if (clientSecret != null && !clientSecret.isEmpty()) {
-                // check secret ==
-                // then return true
-                // else false
+
+            ServiceProviderDto serviceProviderDto = provisioningService.getServiceProviderDetails(clientId);
+
+            if (clientSecret != null && !clientSecret.isEmpty() && serviceProviderDto != null
+                    && serviceProviderDto.getAdminServiceDto() != null
+                    && serviceProviderDto.getAdminServiceDto().getOauthConsumerSecret() != null
+                    && !serviceProviderDto.getAdminServiceDto().getOauthConsumerSecret().isEmpty()
+                    && serviceProviderDto.getAdminServiceDto().getOauthConsumerSecret().equals(clientSecret)) {
+                isAppAvailable = true;
             }
         }
         return isAppAvailable;
