@@ -16,6 +16,7 @@
 
 package com.wso2telco.sp.provision.service.impl;
 
+import com.wso2telco.core.spprovisionservice.sp.entity.AdminServiceDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.ProvisionType;
 import com.wso2telco.core.spprovisionservice.sp.entity.ServiceProviderDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.SpProvisionDto;
@@ -38,11 +39,14 @@ public class ProvisioningServiceImpl implements ProvisioningService<Object, Obje
         serviceProviderProvisionFactory = new ServiceProviderProvisionFactory();
         provisionType = spProvisionDto.getProvisionType();
         provisioner = serviceProviderProvisionFactory.getProvisioner(provisionType);
+        AdminServiceDto adminServiceDto = spProvisionDto.getServiceProviderDto().getAdminServiceDto();
 
-        if (provisioner != null) {
-            provisioner.provisionServiceProvider(spProvisionDto.getServiceProviderDto(), spProvisionDto.getSpProvisionConfig());
+        if ((provisioner != null) && (adminServiceDto.getApplicationName() != null) && (adminServiceDto
+                .getOauthConsumerKey() != null) && (adminServiceDto.getCallbackUrl() != null)) {
+            provisioner.provisionServiceProvider(spProvisionDto.getServiceProviderDto(), spProvisionDto
+                    .getSpProvisionConfig());
         } else {
-            log.error("Provisioner object is null");
+            log.error("Provisioner object doesn't contain mandatory details");
             return;
         }
     }
@@ -60,5 +64,19 @@ public class ProvisioningServiceImpl implements ProvisioningService<Object, Obje
             log.error(applicationName + " is not registered");
         }
         return serviceProviderDto;
+    }
+
+    @Override
+    public AdminServiceDto getOauthServiceProviderData(String consumerKey) {
+        serviceProviderProvisionFactory = new ServiceProviderProvisionFactory();
+        AdminServiceDto adminServiceDto = null;
+        try {
+            adminServiceDto = serviceProviderProvisionFactory.getOauthServiceProviderData(consumerKey);
+        } catch (SpProvisionServiceException e) {
+            log.error("Error occurred while taking details of the Service Provider");
+        } catch (NullPointerException e) {
+            log.error("Application with consumer key " + consumerKey + " is not registered");
+        }
+        return adminServiceDto;
     }
 }

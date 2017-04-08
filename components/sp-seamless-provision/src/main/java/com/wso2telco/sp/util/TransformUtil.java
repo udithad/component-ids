@@ -27,7 +27,7 @@ import com.wso2telco.core.spprovisionservice.sp.entity.EksDisConfig;
 public class TransformUtil {
 
     public static DiscoveryServiceConfig transformDiscoveryConfig(DiscoveryConfig discoveryConfig,
-            MobileConnectConfig mobileConnectConfig) {
+                                                                  MobileConnectConfig mobileConnectConfig) {
         DiscoveryServiceConfig config = new DiscoveryServiceConfig();
 
         config.setEksDiscoveryConfig(transformEksDiscoveryConfig(discoveryConfig.getEksDiscoveryConfig()));
@@ -37,9 +37,11 @@ public class TransformUtil {
         return config;
     }
 
-    public static com.wso2telco.core.spprovisionservice.sp.entity.CrValidateDiscoveryConfig transoformCrValidateDiscoveryConfig(
+    public static com.wso2telco.core.spprovisionservice.sp.entity.CrValidateDiscoveryConfig
+    transoformCrValidateDiscoveryConfig(
             CrValidateDiscoveryConfig discoveryConf) {
-        com.wso2telco.core.spprovisionservice.sp.entity.CrValidateDiscoveryConfig crValidateDiscoveryConfig = new com.wso2telco.core.spprovisionservice.sp.entity.CrValidateDiscoveryConfig();
+        com.wso2telco.core.spprovisionservice.sp.entity.CrValidateDiscoveryConfig crValidateDiscoveryConfig = new com
+                .wso2telco.core.spprovisionservice.sp.entity.CrValidateDiscoveryConfig();
         if (discoveryConf != null) {
             crValidateDiscoveryConfig.setServiceUrl(discoveryConf.getServiceUrl());
         }

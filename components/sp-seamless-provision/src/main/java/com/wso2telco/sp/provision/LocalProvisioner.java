@@ -29,9 +29,10 @@ public class LocalProvisioner extends Provisioner {
     private static Log log = LogFactory.getLog(LocalProvisioner.class);
 
     @Override
-    public void provisionServiceProvider(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig) throws SpProvisionServiceException {
+    public void provisionServiceProvider(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig)
+            throws SpProvisionServiceException {
 
         serviceProviderBuilder = new ServiceProviderBuilder();
-        serviceProviderBuilder.buildServiceProvider(serviceProviderDto,spProvisionConfig);
+        serviceProviderBuilder.buildServiceProvider(serviceProviderDto, spProvisionConfig);
     }
 }

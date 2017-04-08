@@ -134,10 +134,10 @@ public class Endpoints {
         AdminServiceDto adminServiceDto;
         SpProvisionConfig spProvisionConfig = null;
 
-        String applicationName = "WSO2Telco1023";
-        String description = "App by Telco1023";
-        String cutomerKey = "customkeygenerationTelcoWSO21023";
-        String secretKey = "secretkeygenerationTelcoWSO21023";
+        String applicationName = "WSO2Telco1033";
+        String description = "App by Telco1033";
+        String cutomerKey = "customkeygenerationTelcoWSO21033";
+        String secretKey = "sgenerationTelcoWSO21023";
         String callbackUrl = "https://localhost:9443/playground2/oauth2.jsp";
 
         if (mobileConnectConfigs.isSeamlessProvisioningEnabled()) {
@@ -160,11 +160,13 @@ public class Endpoints {
                 String idpRoles[] = {applicationName};
                 serviceProviderDto.setIdpRoles(idpRoles);
                 serviceProviderDto.setSaasApp(config.isSaasApp());
-                serviceProviderDto.setLocalAuthenticatorConfigsDisplayName(config.getLocalAuthenticatorConfigsDisplayName());
+                serviceProviderDto.setLocalAuthenticatorConfigsDisplayName(config
+                        .getLocalAuthenticatorConfigsDisplayName());
                 serviceProviderDto.setLocalAuthenticatorConfigsEnabled(config.isLocalAuthenticatorConfigsEnabled());
                 serviceProviderDto.setLocalAuthenticatorConfigsName(config.getLocalAuthenticatorConfigsName());
                 serviceProviderDto.setLocalAuthenticatorConfigsValid(config.isLocalAuthenticatorConfigsValid());
-                serviceProviderDto.setLocalAuthenticatorConfigsAuthenticationType(config.getLocalAuthenticatorConfigsAuthenticationType());
+                serviceProviderDto.setLocalAuthenticatorConfigsAuthenticationType(config
+                        .getLocalAuthenticatorConfigsAuthenticationType());
 
                 //Set values for spProvisionConfig
 
@@ -189,11 +191,13 @@ public class Endpoints {
                 spProvisionDto.setSpProvisionConfig(spProvisionConfig);
 
                 ProvisioningService provisioningService = new ProvisioningServiceImpl();
+
                 try {
                     provisioningService.provisionServiceProvider(spProvisionDto);
                 } catch (SpProvisionServiceException e) {
-                    log.error("Error occurred in provisioning a Service Provider " + e.getMessage());
+                    e.printStackTrace();
                 }
+
             } else
                 log.error("Config null");
         }
@@ -202,8 +206,10 @@ public class Endpoints {
     @GET
     @Path("/oauth2/authorize/operator/{operatorName}")
     public void RedirectToAuthorizeEndpoint(@Context HttpServletRequest httpServletRequest,
-                                            @Context HttpServletResponse httpServletResponse, @Context HttpHeaders httpHeaders,
-                                            @Context UriInfo uriInfo, @PathParam("operatorName") String operatorName, String jsonBody)
+                                            @Context HttpServletResponse httpServletResponse, @Context HttpHeaders
+                                                        httpHeaders,
+                                            @Context UriInfo uriInfo, @PathParam("operatorName") String operatorName,
+                                            String jsonBody)
             throws Exception {
 
         operatorName = operatorName.toLowerCase();
@@ -503,7 +509,9 @@ public class Endpoints {
      * @throws AuthenticationFailedException
      */
     private String retunFormatVerfiedPlainTextLoginHint(String loginHint,
-                                                        List<LoginHintFormatDetails> loginHintAllowedFormatDetailsList, UserStatus userStatus)
+                                                        List<LoginHintFormatDetails>
+                                                                loginHintAllowedFormatDetailsList, UserStatus
+                                                                userStatus)
             throws AuthenticationFailedException {
         boolean isValidFormatType = false; // msisdn/loginhint should be a either of defined formats
 

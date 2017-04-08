@@ -16,6 +16,7 @@
 
 package com.wso2telco.sp.provision.service;
 
+import com.wso2telco.core.spprovisionservice.sp.entity.AdminServiceDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.ServiceProviderDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.SpProvisionDto;
 import com.wso2telco.core.spprovisionservice.sp.exception.SpProvisionServiceException;
@@ -25,4 +26,6 @@ public interface ProvisioningService<K, T> {
     void provisionServiceProvider(SpProvisionDto spProvisionDto) throws SpProvisionServiceException;
 
     ServiceProviderDto getServiceProviderDetails(String applicationName);
+
+    AdminServiceDto getOauthServiceProviderData(String consumerKey);
 }

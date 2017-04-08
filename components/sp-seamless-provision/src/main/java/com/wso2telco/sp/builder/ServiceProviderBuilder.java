@@ -21,7 +21,6 @@ import com.wso2telco.core.config.service.ConfigurationService;
 import com.wso2telco.core.config.service.ConfigurationServiceImpl;
 import com.wso2telco.core.spprovisionservice.external.admin.service.OauthAdminService;
 import com.wso2telco.core.spprovisionservice.external.admin.service.SpAppManagementService;
-import com.wso2telco.core.spprovisionservice.external.admin.service.dataTransform.TransformServiceProviderDto;
 import com.wso2telco.core.spprovisionservice.external.admin.service.impl.OauthAdminServiceImpl;
 import com.wso2telco.core.spprovisionservice.external.admin.service.impl.SpAppManagementServiceImpl;
 import com.wso2telco.core.spprovisionservice.sp.entity.AdminServiceDto;
@@ -43,7 +42,8 @@ public class ServiceProviderBuilder {
     private MobileConnectConfig.Config config = null;
     private ConfigurationService configurationService = new ConfigurationServiceImpl();
 
-    public void buildServiceProvider(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig) throws SpProvisionServiceException {
+    public void buildServiceProvider(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig)
+            throws SpProvisionServiceException {
         mobileConnectConfig = configurationService.getDataHolder().getMobileConnectConfig();
         config = new MobileConnectConfig.Config();
 
@@ -71,7 +71,8 @@ public class ServiceProviderBuilder {
         }
     }
 
-    public ServiceProvider buildSpApplicationDataStructure(ServiceProviderDto serviceProviderDto) throws SpProvisionServiceException {
+    public ServiceProvider buildSpApplicationDataStructure(ServiceProviderDto serviceProviderDto) throws
+            SpProvisionServiceException {
 
         spAppManagementService = new SpAppManagementServiceImpl();
         String applicationName = serviceProviderDto.getApplicationName();
@@ -91,7 +92,8 @@ public class ServiceProviderBuilder {
         return serviceProvider;
     }
 
-    public void reBuildOauthDataStructure(String oldConsumerKey, AdminServiceDto adminServiceDto) throws SpProvisionServiceException {
+    public void reBuildOauthDataStructure(String oldConsumerKey, AdminServiceDto adminServiceDto) throws
+            SpProvisionServiceException {
 
         if (adminServiceDto != null) {
             adminService = new OauthAdminServiceImpl();
@@ -119,10 +121,18 @@ public class ServiceProviderBuilder {
 
     public ServiceProviderDto getServiceProviderDetails(String applicationName) throws SpProvisionServiceException {
 
+        ServiceProviderDto serviceProviderDto;
         spAppManagementService = new SpAppManagementServiceImpl();
-        TransformServiceProviderDto transformServiceProviderDto = new TransformServiceProviderDto();
-        ServiceProvider serviceProvider = spAppManagementService.getSpApplicationData(applicationName);
-        serviceProviderDto = transformServiceProviderDto.transformToServiceProviderDto(serviceProvider);
+        ;
+        serviceProviderDto = spAppManagementService.getServiceProviderDetails(applicationName);
         return serviceProviderDto;
+    }
+
+    public AdminServiceDto getOauthServiceProviderData(String consumerKey) throws SpProvisionServiceException {
+
+        AdminServiceDto adminServiceDto;
+        adminService = new OauthAdminServiceImpl();
+        adminServiceDto = adminService.getOauthServiceProviderData(consumerKey);
+        return adminServiceDto;
     }
 }

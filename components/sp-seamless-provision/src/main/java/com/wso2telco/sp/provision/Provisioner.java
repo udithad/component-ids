@@ -23,6 +23,7 @@ import com.wso2telco.core.spprovisionservice.sp.exception.SpProvisionServiceExce
 
 public abstract class Provisioner {
 
-    public abstract void provisionServiceProvider(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig) throws SpProvisionServiceException;
+    public abstract void provisionServiceProvider(ServiceProviderDto serviceProviderDto, SpProvisionConfig
+            spProvisionConfig) throws SpProvisionServiceException;
 
 }

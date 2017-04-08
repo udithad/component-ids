@@ -23,7 +23,8 @@ import com.wso2telco.core.spprovisionservice.sp.exception.SpProvisionServiceExce
 public class RemoteProvisioner extends Provisioner {
 
     @Override
-    public void provisionServiceProvider(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig) throws SpProvisionServiceException {
+    public void provisionServiceProvider(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig)
+            throws SpProvisionServiceException {
 
         //todo OutBound Provisioning
 
