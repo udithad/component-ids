@@ -22,6 +22,7 @@ import org.apache.commons.logging.LogFactory;
 import com.wso2telco.core.pcrservice.PCRGeneratable;
 import com.wso2telco.core.pcrservice.Returnable;
 import com.wso2telco.core.pcrservice.exception.PCRException;
+import com.wso2telco.core.spprovisionservice.sp.entity.AdminServiceDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.DiscoveryServiceConfig;
 import com.wso2telco.core.spprovisionservice.sp.entity.DiscoveryServiceDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.ProvisionType;
@@ -54,8 +55,10 @@ public class LocalDiscovery extends DiscoveryLocator {
         isAppAvailable = checkLocally(discoveryServiceConfig.isPcrServiceEnabled(), discoveryServiceDto.getSectorId(),
                 discoveryServiceDto.getClientId(), discoveryServiceDto.getClientSecret());
         if (!isAppAvailable) {
+            log.info("SP NOT AVAILABLE locally... Fetching remotley ...");
             serviceProviderDto = checkRemotlyDiscovery(discoveryServiceConfig, discoveryServiceDto);
         } else {
+            log.info("Successful -> SP Available locally...");
             serviceProviderDto = constructDefaultSp();
         }
 
@@ -87,13 +90,12 @@ public class LocalDiscovery extends DiscoveryLocator {
             isAppAvailable = checkSpAvailabilityInmemory(sectorId, clientId);
         } else {
 
-            ServiceProviderDto serviceProviderDto = provisioningService.getServiceProviderDetails(clientId);
+            AdminServiceDto adminServiceDto = provisioningService.getOauthServiceProviderData(clientId);
 
-            if (clientSecret != null && !clientSecret.isEmpty() && serviceProviderDto != null
-                    && serviceProviderDto.getAdminServiceDto() != null
-                    && serviceProviderDto.getAdminServiceDto().getOauthConsumerSecret() != null
-                    && !serviceProviderDto.getAdminServiceDto().getOauthConsumerSecret().isEmpty()
-                    && serviceProviderDto.getAdminServiceDto().getOauthConsumerSecret().equals(clientSecret)) {
+            if (clientSecret != null && !clientSecret.isEmpty() && adminServiceDto != null
+                    && adminServiceDto.getOauthConsumerSecret() != null
+                    && !adminServiceDto.getOauthConsumerSecret().isEmpty()
+                    && adminServiceDto.getOauthConsumerSecret().equals(clientSecret)) {
                 isAppAvailable = true;
             }
         }

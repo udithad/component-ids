@@ -41,10 +41,24 @@ public class ProvisioningServiceImpl implements ProvisioningService<Object, Obje
         provisioner = serviceProviderProvisionFactory.getProvisioner(provisionType);
         AdminServiceDto adminServiceDto = spProvisionDto.getServiceProviderDto().getAdminServiceDto();
 
-        if ((provisioner != null) && (adminServiceDto.getApplicationName() != null) && (adminServiceDto
-                .getOauthConsumerKey() != null) && (adminServiceDto.getCallbackUrl() != null)) {
-            provisioner.provisionServiceProvider(spProvisionDto.getServiceProviderDto(), spProvisionDto
-                    .getSpProvisionConfig());
+        if ((provisioner != null) && (adminServiceDto.getOauthConsumerKey() != null)) {
+            provisioner.provisionServiceProvider(spProvisionDto.getServiceProviderDto(),
+                    spProvisionDto.getSpProvisionConfig());
+        } else {
+            log.error("Provisioner object doesn't contain mandatory details");
+            return;
+        }
+    }
+
+    @Override
+    public void rebuildOauthKeys(SpProvisionDto spProvisionDto) throws SpProvisionServiceException {
+        serviceProviderProvisionFactory = new ServiceProviderProvisionFactory();
+        provisionType = spProvisionDto.getProvisionType();
+        provisioner = serviceProviderProvisionFactory.getProvisioner(provisionType);
+        AdminServiceDto adminServiceDto = spProvisionDto.getServiceProviderDto().getAdminServiceDto();
+
+        if ((provisioner != null) && (adminServiceDto.getOauthConsumerKey() != null)) {
+            provisioner.updateOauthkeys(spProvisionDto.getServiceProviderDto(), spProvisionDto.getSpProvisionConfig());
         } else {
             log.error("Provisioner object doesn't contain mandatory details");
             return;

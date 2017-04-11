@@ -16,9 +16,6 @@
 
 package com.wso2telco.sp.builder;
 
-import com.wso2telco.core.config.model.MobileConnectConfig;
-import com.wso2telco.core.config.service.ConfigurationService;
-import com.wso2telco.core.config.service.ConfigurationServiceImpl;
 import com.wso2telco.core.spprovisionservice.external.admin.service.OauthAdminService;
 import com.wso2telco.core.spprovisionservice.external.admin.service.SpAppManagementService;
 import com.wso2telco.core.spprovisionservice.external.admin.service.impl.OauthAdminServiceImpl;
@@ -35,18 +32,20 @@ public class ServiceProviderBuilder {
 
     private OauthAdminService adminService = null;
     private SpAppManagementService spAppManagementService = null;
-    private AdminServiceDto adminserviceDto = null;
-    private ServiceProviderDto serviceProviderDto = null;
     private static Log log = LogFactory.getLog(ServiceProviderBuilder.class);
-    private MobileConnectConfig mobileConnectConfig = null;
-    private MobileConnectConfig.Config config = null;
-    private ConfigurationService configurationService = new ConfigurationServiceImpl();
 
+
+    public void reBuildOauthKey(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig)
+            throws SpProvisionServiceException {
+        if (serviceProviderDto != null) {
+            buildOauthDataStructure(serviceProviderDto.getAdminServiceDto());
+        } else {
+            log.error("Service Provider details are empty");
+        }
+    }
+    
     public void buildServiceProvider(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig)
             throws SpProvisionServiceException {
-        mobileConnectConfig = configurationService.getDataHolder().getMobileConnectConfig();
-        config = new MobileConnectConfig.Config();
-
         if (serviceProviderDto != null) {
 
             buildOauthDataStructure(serviceProviderDto.getAdminServiceDto());

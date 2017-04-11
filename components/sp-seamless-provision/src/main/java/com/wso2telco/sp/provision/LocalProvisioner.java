@@ -35,4 +35,12 @@ public class LocalProvisioner extends Provisioner {
         serviceProviderBuilder = new ServiceProviderBuilder();
         serviceProviderBuilder.buildServiceProvider(serviceProviderDto, spProvisionConfig);
     }
+
+    @Override
+    public void updateOauthkeys(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig)
+            throws SpProvisionServiceException {
+        serviceProviderBuilder = new ServiceProviderBuilder();
+        serviceProviderBuilder.reBuildOauthKey(serviceProviderDto, spProvisionConfig);
+
+    }
 }

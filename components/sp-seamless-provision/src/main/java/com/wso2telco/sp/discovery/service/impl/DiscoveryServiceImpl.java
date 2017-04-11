@@ -43,8 +43,7 @@ public class DiscoveryServiceImpl implements DiscoveryService {
             log.info("Performing Credentials discovery for CR.");
             discoverSp = new LocalDiscovery();
             discoverSp.setNextDiscovery(new RemoteCredentialDiscovery());
-            serviceProviderDto = discoverSp.servceProviderDiscovery(discoveryServiceConfig,
-                    discoveryServiceDto);
+            serviceProviderDto = discoverSp.servceProviderDiscovery(discoveryServiceConfig, discoveryServiceDto);
         } catch (DicoveryException e) {
             if (e.isSystemError()) {
                 log.error("Error Occured While Trying To Fetch Discovery Call :: Message = " + e.getMessage());

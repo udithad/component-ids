@@ -23,9 +23,11 @@ import com.wso2telco.core.spprovisionservice.sp.exception.SpProvisionServiceExce
 
 public interface ProvisioningService<K, T> {
 
-    void provisionServiceProvider(SpProvisionDto spProvisionDto) throws SpProvisionServiceException;
+    public void provisionServiceProvider(SpProvisionDto spProvisionDto) throws SpProvisionServiceException;
 
-    ServiceProviderDto getServiceProviderDetails(String applicationName);
+    public ServiceProviderDto getServiceProviderDetails(String applicationName);
 
-    AdminServiceDto getOauthServiceProviderData(String consumerKey);
+    public AdminServiceDto getOauthServiceProviderData(String consumerKey);
+
+    public void rebuildOauthKeys(SpProvisionDto spProvisionDto) throws SpProvisionServiceException;
 }

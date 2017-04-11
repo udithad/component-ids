@@ -312,27 +312,6 @@ public class Endpoints {
                     .transformDiscoveryConfig(mobileConnectConfigs.getDiscoveryConfig(), mobileConnectConfigs),
                     TransformUtil.transofrmDiscoveryDto(client_id, redirectURL));
 
-            String applicationName = "demoapp";
-            String description = "demoapp";
-            String cutomerKey = "x-977b328e-e5ef-45f5-81a9-9890091b6407";
-           // String secretKey = "";
-            String callbackUrl = "https://localhost:9443/playground2/oauth2.jsp";
-            
-            if (serviceProviderDto == null) {
-                serviceProviderDto = new ServiceProviderDto();
-
-                AdminServiceDto adminServiceDto = new AdminServiceDto();
-                adminServiceDto.setCallbackUrl(callbackUrl);
-                adminServiceDto.setApplicationName(applicationName);
-                adminServiceDto.setOauthConsumerKey(cutomerKey.replaceAll("x-", ""));
-                
-                serviceProviderDto.setApplicationName(applicationName);
-                serviceProviderDto.setExistance(ProvisionType.REMOTE);
-                serviceProviderDto.setDescription(description);
-                serviceProviderDto.setAdminServiceDto(adminServiceDto);
-                
-            }
-
             if (serviceProviderDto != null && serviceProviderDto.getExistance().equals(ProvisionType.REMOTE)
                     && serviceProviderDto.getAdminServiceDto() != null) {
                 log.info("Provisioning Service Provider to Local data store....");

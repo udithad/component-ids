@@ -29,4 +29,11 @@ public class RemoteProvisioner extends Provisioner {
         //todo OutBound Provisioning
 
     }
+
+    @Override
+    public void updateOauthkeys(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig)
+            throws SpProvisionServiceException {
+        // TODO Auto-generated method stub
+        
+    }
 }
