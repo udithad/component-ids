@@ -3,7 +3,9 @@ package com.wso2telco.sp.discovery;
 import org.junit.*;
 
 
-public class DiscoveryLocatorTest {
+import junit.framework.TestCase;
+
+public class DiscoveryLocatorTest extends TestCase {
 
     /*
      * @BeforeClass
@@ -18,13 +20,19 @@ public class DiscoveryLocatorTest {
         DiscoveryLocator discoveryLocator = new LocalDiscovery();
         RemoteCredentialDiscovery remoteCredentialDiscovery = new RemoteCredentialDiscovery();
         discoveryLocator.setNextDiscovery(remoteCredentialDiscovery);
-        
-        
+
         Assert.assertEquals(discoveryLocator.getNextDiscovery(), remoteCredentialDiscovery);
 
     }
-
-   
+    
+    public DiscoveryLocatorTest(String name){
+        super(name);
+    }
+    
+    
+    public static void main(String[] args) {
+        new org.junit.runner.JUnitCore().run(DiscoveryLocatorTest.class);
+    }
     /*
      * @After
      * public void collector() {

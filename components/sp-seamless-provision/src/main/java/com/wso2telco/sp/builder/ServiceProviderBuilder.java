@@ -27,6 +27,7 @@ import com.wso2telco.core.spprovisionservice.sp.exception.SpProvisionServiceExce
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.model.xsd.ServiceProvider;
+import org.wso2.carbon.identity.oauth.stub.dto.OAuthConsumerAppDTO;
 
 public class ServiceProviderBuilder {
 
@@ -34,16 +35,15 @@ public class ServiceProviderBuilder {
     private SpAppManagementService spAppManagementService = null;
     private static Log log = LogFactory.getLog(ServiceProviderBuilder.class);
 
-
     public void reBuildOauthKey(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig)
             throws SpProvisionServiceException {
         if (serviceProviderDto != null) {
-            buildOauthDataStructure(serviceProviderDto.getAdminServiceDto());
+            reBuildOauthDataStructure(serviceProviderDto.getAdminServiceDto());
         } else {
             log.error("Service Provider details are empty");
         }
     }
-    
+
     public void buildServiceProvider(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig)
             throws SpProvisionServiceException {
         if (serviceProviderDto != null) {
@@ -55,13 +55,16 @@ public class ServiceProviderBuilder {
         }
     }
 
-    public void buildOauthDataStructure(AdminServiceDto adminServiceDto) throws SpProvisionServiceException {
+    public void reBuildOauthDataStructure(AdminServiceDto adminServiceDto) throws SpProvisionServiceException {
 
         adminService = new OauthAdminServiceImpl();
 
         if (adminServiceDto != null) {
             try {
-                adminService.registerOAuthApplicationData(adminServiceDto);
+                OAuthConsumerAppDTO authConsumerAppDTO = adminService.getOAuthApplicationData(adminServiceDto);
+                if (authConsumerAppDTO != null) {
+                    adminService.rebuildOAuthApplicationData(adminServiceDto, authConsumerAppDTO);
+                }
             } catch (SpProvisionServiceException e) {
                 throw new SpProvisionServiceException(e.getMessage());
             }
@@ -70,8 +73,27 @@ public class ServiceProviderBuilder {
         }
     }
 
-    public ServiceProvider buildSpApplicationDataStructure(ServiceProviderDto serviceProviderDto) throws
-            SpProvisionServiceException {
+    public void buildOauthDataStructure(AdminServiceDto adminServiceDto) throws SpProvisionServiceException {
+
+        adminService = new OauthAdminServiceImpl();
+
+        if (adminServiceDto != null) {
+            try {
+                OAuthConsumerAppDTO authConsumerAppDTO = adminService.getOAuthApplicationData(adminServiceDto);
+                if (authConsumerAppDTO == null
+                        && !adminService.isCredentailsEquals(adminServiceDto, authConsumerAppDTO)) {
+                    adminService.registerOAuthApplicationData(adminServiceDto);
+                }
+            } catch (SpProvisionServiceException e) {
+                throw new SpProvisionServiceException(e.getMessage());
+            }
+        } else {
+            log.error("oAuth data object doesn't have data for the registration");
+        }
+    }
+
+    public ServiceProvider buildSpApplicationDataStructure(ServiceProviderDto serviceProviderDto)
+            throws SpProvisionServiceException {
 
         spAppManagementService = new SpAppManagementServiceImpl();
         String applicationName = serviceProviderDto.getApplicationName();
@@ -91,8 +113,8 @@ public class ServiceProviderBuilder {
         return serviceProvider;
     }
 
-    public void reBuildOauthDataStructure(String oldConsumerKey, AdminServiceDto adminServiceDto) throws
-            SpProvisionServiceException {
+    public void reBuildOauthDataStructure(String oldConsumerKey, AdminServiceDto adminServiceDto)
+            throws SpProvisionServiceException {
 
         if (adminServiceDto != null) {
             adminService = new OauthAdminServiceImpl();
@@ -103,7 +125,6 @@ public class ServiceProviderBuilder {
     }
 
     public void revokeSpApplication(String oldConsumerKey, String applicationName) throws SpProvisionServiceException {
-
 
         adminService = new OauthAdminServiceImpl();
         spAppManagementService = new SpAppManagementServiceImpl();
@@ -121,8 +142,7 @@ public class ServiceProviderBuilder {
     public ServiceProviderDto getServiceProviderDetails(String applicationName) throws SpProvisionServiceException {
 
         ServiceProviderDto serviceProviderDto;
-        spAppManagementService = new SpAppManagementServiceImpl();
-        ;
+        spAppManagementService = new SpAppManagementServiceImpl();;
         serviceProviderDto = spAppManagementService.getServiceProviderDetails(applicationName);
         return serviceProviderDto;
     }

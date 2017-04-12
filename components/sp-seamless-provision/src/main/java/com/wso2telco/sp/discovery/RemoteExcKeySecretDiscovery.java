@@ -42,24 +42,25 @@ public class RemoteExcKeySecretDiscovery extends RemoteDiscovery {
                 discoveryServiceDto.getClientSecret());
         String requestMethod = HTTP_POST;
         String data = MSISDN + EQA_OPERATOR + discoveryServiceDto.getMsisdn();
-        Map<String, String> requestProperties = buildRequestPropertiesEks(discoveryServiceConfig, discoveryServiceDto,
-                encodedBasicAuthCode);
+        Map<String, String> requestProperties = buildRequestProperties(encodedBasicAuthCode);
 
         EksDiscovery eksDiscovery = new Gson()
-                .fromJson(getJsonWithDiscovery(buildEksEndPointUrl(discoveryServiceConfig), requestMethod, data,
+                .fromJson(getJsonWithDiscovery(buildEndPointUrl(discoveryServiceConfig, null), requestMethod, data,
                         requestProperties), EksDiscovery.class);
-        return createServiceProviderDtoBy(eksDiscovery);
+        return createServiceProviderDtoBy(eksDiscovery,null);
     }
 
-    private String buildEksEndPointUrl(DiscoveryServiceConfig discoveryServiceConfig) {
+    @Override
+    public String buildEndPointUrl(DiscoveryServiceConfig discoveryServiceConfig,
+            DiscoveryServiceDto discoveryServiceDto) {
         log.info("EKS-> Building end point url...");
         String endPointUrl = discoveryServiceConfig.getEksDiscoveryConfig().getServiceUrl() + QES_OPERATOR
                 + REDIRECT_URL + EQA_OPERATOR + discoveryServiceConfig.getEksDiscoveryConfig().getRedirectUrl();
         return endPointUrl;
     }
 
-    private Map<String, String> buildRequestPropertiesEks(DiscoveryServiceConfig discoveryServiceConfig,
-            DiscoveryServiceDto discoveryServiceDto, String encodedBasicAuthCode) {
+    @Override
+    public Map<String, String> buildRequestProperties(String encodedBasicAuthCode) {
         log.info("EKS-> Building request properties...");
         Map<String, String> requestProperties = new HashMap<String, String>();
         requestProperties.put(CONTENT_TYPE_HEADER_KEY, CONTENT_TYPE_HEADER_VAL_TYPE_EKS);
@@ -67,8 +68,10 @@ public class RemoteExcKeySecretDiscovery extends RemoteDiscovery {
         return requestProperties;
     }
 
-    private ServiceProviderDto createServiceProviderDtoBy(EksDiscovery eksDiscovery) {
+    @Override
+    public <K,T> ServiceProviderDto createServiceProviderDtoBy(K k,T t) {
         log.info("EKS-> Create service provider dto...");
+        EksDiscovery eksDiscovery =  (EksDiscovery) k;
         ServiceProviderDto serviceProviderDto = new ServiceProviderDto();
         if (eksDiscovery != null && eksDiscovery.getResponse() != null) {
             AdminServiceDto adminServiceDto = new AdminServiceDto();

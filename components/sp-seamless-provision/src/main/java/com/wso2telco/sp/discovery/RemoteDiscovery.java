@@ -45,7 +45,7 @@ import com.wso2telco.sp.entity.EksDiscovery;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public abstract class RemoteDiscovery extends DiscoveryLocator {
+public abstract class RemoteDiscovery extends DiscoveryLocator implements InlineConnectionStrategies {
 
     protected static String ACCEPT = "Accept";
     protected static String CONTENT_TYPE_HEADER_KEY = "Content-Type";
@@ -66,6 +66,13 @@ public abstract class RemoteDiscovery extends DiscoveryLocator {
     protected static String NEW_LINE = "\n";
 
     private static Log log = LogFactory.getLog(RemoteDiscovery.class);
+
+    public abstract Map<String, String> buildRequestProperties(String encodedBasicAuthCode);
+
+    public abstract String buildEndPointUrl(DiscoveryServiceConfig discoveryServiceConfig,
+            DiscoveryServiceDto discoveryServiceDto);
+    
+    public abstract <K,T> ServiceProviderDto createServiceProviderDtoBy(K k,T t);
 
     protected String getJsonWithDiscovery(String endPointUrl, String requestMethod, String data,
             Map<String, String> requestProperties) throws DicoveryException {
@@ -105,19 +112,22 @@ public abstract class RemoteDiscovery extends DiscoveryLocator {
         return responseJson;
     }
 
-    private void setConnectionRequestMethod(String requestMethod, HttpURLConnection conn) throws ProtocolException {
+    @Override
+    public void setConnectionRequestMethod(String requestMethod, HttpURLConnection conn) throws ProtocolException {
         log.info("Setting connection request method...");
         conn.setRequestMethod(requestMethod);
     }
 
-    private void setRequestProperties(Map<String, String> requestPrperties, HttpURLConnection conn) {
+    @Override
+    public void setRequestProperties(Map<String, String> requestPrperties, HttpURLConnection conn) {
         log.info("Setting request properties...");
         for (Map.Entry<String, String> propEntry : requestPrperties.entrySet()) {
             conn.setRequestProperty(propEntry.getKey(), propEntry.getValue());
         }
     }
 
-    private boolean setOutPutStrategy(String data, HttpURLConnection conn) {
+    @Override
+    public boolean setOutPutStrategy(String data, HttpURLConnection conn) {
         log.info("Setting output strategy...");
         boolean isDoOutput = false;
         if (data != null && !data.isEmpty()) {
@@ -127,7 +137,8 @@ public abstract class RemoteDiscovery extends DiscoveryLocator {
         return isDoOutput;
     }
 
-    private void writeToOutputStream(String data, HttpURLConnection conn) throws IOException {
+    @Override
+    public void writeToOutputStream(String data, HttpURLConnection conn) throws IOException {
         log.info("Writing to output stream start...");
         OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream());
         wr.write(data);
@@ -135,7 +146,8 @@ public abstract class RemoteDiscovery extends DiscoveryLocator {
         log.info("Writing to output stream end...");
     }
 
-    private String getJsonBy(InputStream inputStream) throws IOException {
+    @Override
+    public String getJsonBy(InputStream inputStream) throws IOException {
         log.info("Concatenating the JSON inputs...");
         BufferedReader br = new BufferedReader(new InputStreamReader((inputStream)));
         String output;

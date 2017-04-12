@@ -41,17 +41,16 @@ public class RemoteCredentialDiscovery extends RemoteDiscovery {
         String encodedBasicAuthCode = buildBasicAuthCode(discoveryServiceDto.getClientId(),
                 discoveryServiceDto.getClientSecret());
         String requestMethod = HTTP_POST;
-        Map<String, String> requestProperties = buildRequestPropertiesCr(discoveryServiceConfig, discoveryServiceDto,
-                encodedBasicAuthCode);
+        Map<String, String> requestProperties = buildRequestProperties(encodedBasicAuthCode);
 
         CrValidateRes crValidateRes = new Gson()
-                .fromJson(getJsonWithDiscovery(buildCrEndPointUrl(discoveryServiceConfig, discoveryServiceDto),
+                .fromJson(getJsonWithDiscovery(buildEndPointUrl(discoveryServiceConfig, discoveryServiceDto),
                         requestMethod, null, requestProperties), CrValidateRes.class);
         return createServiceProviderDtoBy(crValidateRes, discoveryServiceDto);
     }
 
-    private Map<String, String> buildRequestPropertiesCr(DiscoveryServiceConfig discoveryServiceConfig,
-            DiscoveryServiceDto discoveryServiceDto, String encodedBasicAuthCode) {
+    @Override
+    public Map<String, String> buildRequestProperties(String encodedBasicAuthCode) {
         log.info("CR-> Building request properties.");
         Map<String, String> requestProperties = new HashMap<String, String>();
         requestProperties.put(ACCEPT, CONTENT_TYPE_HEADER_VAL_TYPE_CR);
@@ -59,7 +58,8 @@ public class RemoteCredentialDiscovery extends RemoteDiscovery {
         return requestProperties;
     }
 
-    private String buildCrEndPointUrl(DiscoveryServiceConfig discoveryServiceConfig,
+    @Override
+    public String buildEndPointUrl(DiscoveryServiceConfig discoveryServiceConfig,
             DiscoveryServiceDto discoveryServiceDto) {
         log.info("CR-> Build endpoint url");
         String endPointUrl = discoveryServiceConfig.getCrValidateDiscoveryConfig().getServiceUrl() + QES_OPERATOR
@@ -68,9 +68,11 @@ public class RemoteCredentialDiscovery extends RemoteDiscovery {
         return endPointUrl;
     }
 
-    private ServiceProviderDto createServiceProviderDtoBy(CrValidateRes crValidateRes,
-            DiscoveryServiceDto discoveryServiceDto) {
+    @Override
+    public <K, T> ServiceProviderDto createServiceProviderDtoBy(K k, T t) {
         log.info("CR-> Create Service Provider DTO");
+        CrValidateRes crValidateRes = (CrValidateRes) k;
+        DiscoveryServiceDto discoveryServiceDto = (DiscoveryServiceDto) t;
         ServiceProviderDto serviceProviderDto = new ServiceProviderDto();
         if (crValidateRes != null && crValidateRes.getApplication() != null && discoveryServiceDto != null) {
             serviceProviderDto.setApplicationName(crValidateRes.getApplication().getAppName());

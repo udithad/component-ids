@@ -6,11 +6,16 @@ import com.wso2telco.core.spprovisionservice.sp.entity.CrValidateDiscoveryConfig
 import com.wso2telco.core.spprovisionservice.sp.entity.DiscoveryServiceConfig;
 import com.wso2telco.core.spprovisionservice.sp.entity.DiscoveryServiceDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.EksDisConfig;
+import com.wso2telco.sp.discovery.DiscoveryLocatorTest;
+import com.wso2telco.sp.discovery.LocalDiscoveryTest;
+
+import junit.framework.TestCase;
+
 import com.wso2telco.core.config.model.MobileConnectConfig;
 import com.wso2telco.core.config.model.MobileConnectConfig.DiscoveryConfig;
 import com.wso2telco.core.config.model.MobileConnectConfig.EksDiscoveryConfig;
 
-public class TransformUtilTest {
+public class TransformUtilTest extends TestCase{
 
     private static final String URL = "https://localhost:9443/playground2/oauth2.jsp";
     private static final String CLIENT_ID = "56233566988556222365223";
@@ -71,11 +76,22 @@ public class TransformUtilTest {
         Assert.assertEquals(discoveryServiceConfig.getCrValidateDiscoveryConfig(), null);
         Assert.assertEquals(discoveryServiceConfig.getEksDiscoveryConfig(), null);
     }
-    
+
     @Test
-    public void testValidationUtil(){
+    public void testValidationUtil() {
         ValidationUtil validationUtil = new ValidationUtil();
     }
+    
+    public TransformUtilTest(String name){
+        super(name);
+    }
+    
+    public static void main(String[] args) {
+        new org.junit.runner.JUnitCore().run(TransformUtilTest.class);
+    }
+    
+
+    
     /*
      * @After
      * public void collector() {

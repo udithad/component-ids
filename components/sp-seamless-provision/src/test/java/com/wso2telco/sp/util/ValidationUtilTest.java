@@ -4,7 +4,9 @@ import org.junit.*;
 
 import com.wso2telco.sp.discovery.exception.DicoveryException;
 
-public class ValidationUtilTest {
+import junit.framework.TestCase;
+
+public class ValidationUtilTest extends TestCase{
 
     private static final String CLIENT_ID = "56233566988556222365223";
     private static final String SECTOR = "localhost";
@@ -61,5 +63,12 @@ public class ValidationUtilTest {
         }
         Assert.assertEquals(isValid, FALSE);
     }
-
+    
+    public ValidationUtilTest(String name){
+        super(name);
+    }
+    
+    public static void main(String[] args) {
+        new org.junit.runner.JUnitCore().run(ValidationUtilTest.class);
+    }
 }
