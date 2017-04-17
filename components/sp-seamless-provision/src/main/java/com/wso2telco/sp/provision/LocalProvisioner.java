@@ -16,8 +16,10 @@
 
 package com.wso2telco.sp.provision;
 
+import com.wso2telco.core.spprovisionservice.sp.entity.AdminServiceDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.ServiceProviderDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.SpProvisionConfig;
+import com.wso2telco.core.spprovisionservice.sp.entity.SpProvisionDto;
 import com.wso2telco.core.spprovisionservice.sp.exception.SpProvisionServiceException;
 import com.wso2telco.sp.builder.ServiceProviderBuilder;
 import org.apache.commons.logging.Log;
@@ -32,15 +34,28 @@ public class LocalProvisioner extends Provisioner {
     public void provisionServiceProvider(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig)
             throws SpProvisionServiceException {
 
-        serviceProviderBuilder = new ServiceProviderBuilder();
-        serviceProviderBuilder.buildServiceProvider(serviceProviderDto, spProvisionConfig);
+        serviceProviderBuilder = new ServiceProviderBuilder(spProvisionConfig);
+        serviceProviderBuilder.buildServiceProvider(serviceProviderDto);
     }
 
     @Override
     public void updateOauthkeys(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig)
             throws SpProvisionServiceException {
-        serviceProviderBuilder = new ServiceProviderBuilder();
-        serviceProviderBuilder.reBuildOauthKey(serviceProviderDto, spProvisionConfig);
+        serviceProviderBuilder = new ServiceProviderBuilder(spProvisionConfig);
+        serviceProviderBuilder.reBuildOauthKey(serviceProviderDto);
 
     }
+
+    public ServiceProviderDto getServiceApplicationDetails(String applicationName, SpProvisionConfig spProvisionConfig)
+            throws SpProvisionServiceException {
+        serviceProviderBuilder = new ServiceProviderBuilder(spProvisionConfig);
+        return serviceProviderBuilder.getServiceProviderDetails(applicationName);
+    }
+
+    public AdminServiceDto getOauthServiceProviderData(String consumerKey, SpProvisionDto dto)
+            throws SpProvisionServiceException {
+        serviceProviderBuilder = new ServiceProviderBuilder(dto.getSpProvisionConfig());
+        return serviceProviderBuilder.getOauthServiceProviderData(consumerKey);
+    }
+
 }

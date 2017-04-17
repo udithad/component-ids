@@ -21,13 +21,13 @@ import com.wso2telco.core.spprovisionservice.sp.entity.ServiceProviderDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.SpProvisionDto;
 import com.wso2telco.core.spprovisionservice.sp.exception.SpProvisionServiceException;
 
-public interface ProvisioningService<K, T> {
+public interface ProvisioningService {
 
     public void provisionServiceProvider(SpProvisionDto spProvisionDto) throws SpProvisionServiceException;
 
-    public ServiceProviderDto getServiceProviderDetails(String applicationName);
+    public ServiceProviderDto getServiceProviderDetails(String applicationName, SpProvisionDto spProvisionDto);
 
-    public AdminServiceDto getOauthServiceProviderData(String consumerKey);
+    public AdminServiceDto getOauthServiceProviderData(String consumerKey, SpProvisionDto spProvisionDto);
 
     public void rebuildOauthKeys(SpProvisionDto spProvisionDto) throws SpProvisionServiceException;
 }

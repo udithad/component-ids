@@ -64,9 +64,11 @@ import com.wso2telco.core.config.model.MobileConnectConfig;
 import com.wso2telco.core.config.model.ScopeParam;
 import com.wso2telco.core.config.service.ConfigurationService;
 import com.wso2telco.core.config.service.ConfigurationServiceImpl;
+import com.wso2telco.core.spprovisionservice.sp.entity.AdminServiceConfig;
 import com.wso2telco.core.spprovisionservice.sp.entity.AdminServiceDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.ProvisionType;
 import com.wso2telco.core.spprovisionservice.sp.entity.ServiceProviderDto;
+import com.wso2telco.core.spprovisionservice.sp.entity.SpProvisionConfig;
 import com.wso2telco.core.spprovisionservice.sp.entity.SpProvisionDto;
 import com.wso2telco.core.spprovisionservice.sp.exception.SpProvisionServiceException;
 import com.wso2telco.ids.datapublisher.model.UserStatus;
@@ -92,8 +94,7 @@ public class Endpoints {
     private static MobileConnectConfig mobileConnectConfigs = null;
     private static Map<String, List<MSISDNHeader>> operatorsMSISDNHeadersMap;
     private static Map<String, MobileConnectConfig.OPERATOR> operatorPropertiesMap = null;
-    private static DiscoveryService discoveryService = null;
-    private ProvisioningService provisioningService = null;
+    private static AdminServiceConfig adminServiceConfig = null;
 
     /**
      * The Configuration service
@@ -127,7 +128,8 @@ public class Endpoints {
             for (MobileConnectConfig.OPERATOR op : operators) {
                 operatorPropertiesMap.put(op.getOperatorName(), op);
             }
-            discoveryService = new DiscoveryServiceImpl();
+            adminServiceConfig = new AdminServiceConfig();
+            getSpProvisionConfig(mobileConnectConfigs);
         } catch (SQLException e) {
             log.error("Error occurred while retrieving operator MSISDN properties of operators.");
         } catch (NamingException e) {
@@ -307,10 +309,13 @@ public class Endpoints {
     }
 
     private void serviceProviderSeamlessProvision(String client_id, String redirectURL) {
+        DiscoveryService discoveryService = new DiscoveryServiceImpl();
         if (mobileConnectConfigs.isSeamlessProvisioningEnabled()) {
-            ServiceProviderDto serviceProviderDto = discoveryService.servceProviderCredentialDiscovery(TransformUtil
-                    .transformDiscoveryConfig(mobileConnectConfigs.getDiscoveryConfig(), mobileConnectConfigs),
-                    TransformUtil.transofrmDiscoveryDto(client_id, redirectURL));
+            ServiceProviderDto serviceProviderDto = discoveryService.servceProviderCredentialDiscovery(
+                    TransformUtil.transformDiscoveryConfig(mobileConnectConfigs.getDiscoveryConfig(),
+                            mobileConnectConfigs),
+                    TransformUtil.transofrmDiscoveryDto(client_id, redirectURL),
+                    getServiceProviderDto(null, mobileConnectConfigs.getSpProvisionConfig().getConfig()));
 
             if (serviceProviderDto != null && serviceProviderDto.getExistance().equals(ProvisionType.REMOTE)
                     && serviceProviderDto.getAdminServiceDto() != null) {
@@ -332,7 +337,7 @@ public class Endpoints {
             if (isSeamlessProvisioningEnabled) {
                 if (config != null) {
                     spProvisionDto = getServiceProviderDto(serviceProvider, config);
-                    provisioningService = new ProvisioningServiceImpl();
+                    ProvisioningService provisioningService = new ProvisioningServiceImpl();
                     provisioningService.provisionServiceProvider(spProvisionDto);
                 } else {
                     log.error("Config null");
@@ -346,47 +351,62 @@ public class Endpoints {
     private SpProvisionDto getServiceProviderDto(ServiceProviderDto serviceProvider,
             MobileConnectConfig.Config config) {
         SpProvisionDto spProvisionDto = new SpProvisionDto();
+        SpProvisionConfig spProvisionConfig = new SpProvisionConfig();
 
-        String applicationName = serviceProvider.getApplicationName();
-        String description = serviceProvider.getDescription();
-        String cutomerKey = serviceProvider.getAdminServiceDto().getOauthConsumerKey();
-        String secretKey = serviceProvider.getAdminServiceDto().getOauthConsumerSecret();;
+        if (serviceProvider != null && serviceProvider.getAdminServiceDto() != null
+                && serviceProvider.getAdminServiceDto().getOauthConsumerKey() != null
+                && !serviceProvider.getAdminServiceDto().getOauthConsumerKey().isEmpty()) {
 
-        ServiceProviderDto serviceProviderDto = new ServiceProviderDto();
-        serviceProviderDto.setApplicationName(applicationName);
-        serviceProviderDto.setDescription(description);
-        serviceProviderDto.setInboundAuthKey(cutomerKey);
-        serviceProviderDto.setPropertyValue(secretKey);
-        serviceProviderDto.setAlwaysSendMappedLocalSubjectId(config.isAlwaysSendMappedLocalSubjectId());
-        serviceProviderDto.setLocalClaimDialect(config.isLocalClaimDialect());
-        serviceProviderDto.setInboundAuthType(config.getInboundAuthType());
-        serviceProviderDto.setConfidential(config.isConfidential());
-        serviceProviderDto.setDefaultValue(config.getDefaultValue());
-        serviceProviderDto.setPropertyName(config.getPropertyName());
-        serviceProviderDto.setPropertyRequired(config.isPropertyRequired());
-        serviceProviderDto.setProvisioningEnabled(config.isProvisioningEnabled());
-        serviceProviderDto.setProvisioningUserStore(config.getProvisioningUserStore());
-        String idpRoles[] = { applicationName };
-        serviceProviderDto.setIdpRoles(idpRoles);
-        serviceProviderDto.setSaasApp(config.isSaasApp());
-        serviceProviderDto.setLocalAuthenticatorConfigsDisplayName(config.getLocalAuthenticatorConfigsDisplayName());
-        serviceProviderDto.setLocalAuthenticatorConfigsEnabled(config.isLocalAuthenticatorConfigsEnabled());
-        serviceProviderDto.setLocalAuthenticatorConfigsName(config.getLocalAuthenticatorConfigsName());
-        serviceProviderDto.setLocalAuthenticatorConfigsValid(config.isLocalAuthenticatorConfigsValid());
-        serviceProviderDto.setLocalAuthenticatorConfigsAuthenticationType(
-                config.getLocalAuthenticatorConfigsAuthenticationType());
+            String applicationName = serviceProvider.getApplicationName();
+            String description = serviceProvider.getDescription();
 
-        // Set values for spProvisionConfig
+            ServiceProviderDto serviceProviderDto = new ServiceProviderDto();
+            serviceProviderDto.setApplicationName(applicationName);
+            serviceProviderDto.setDescription(description);
+            serviceProviderDto.setInboundAuthKey(serviceProvider.getAdminServiceDto().getOauthConsumerKey());
+            serviceProviderDto.setAlwaysSendMappedLocalSubjectId(config.isAlwaysSendMappedLocalSubjectId());
+            serviceProviderDto.setLocalClaimDialect(config.isLocalClaimDialect());
+            serviceProviderDto.setInboundAuthType(config.getInboundAuthType());
+            serviceProviderDto.setConfidential(config.isConfidential());
+            serviceProviderDto.setDefaultValue(config.getDefaultValue());
+            serviceProviderDto.setPropertyName(config.getPropertyName());
+            serviceProviderDto.setPropertyRequired(config.isPropertyRequired());
+            serviceProviderDto.setProvisioningEnabled(config.isProvisioningEnabled());
+            serviceProviderDto.setProvisioningUserStore(config.getProvisioningUserStore());
+            String idpRoles[] = { applicationName };
+            serviceProviderDto.setIdpRoles(idpRoles);
+            serviceProviderDto.setSaasApp(config.isSaasApp());
+            serviceProviderDto
+                    .setLocalAuthenticatorConfigsDisplayName(config.getLocalAuthenticatorConfigsDisplayName());
+            serviceProviderDto.setLocalAuthenticatorConfigsEnabled(config.isLocalAuthenticatorConfigsEnabled());
+            serviceProviderDto.setLocalAuthenticatorConfigsName(config.getLocalAuthenticatorConfigsName());
+            serviceProviderDto.setLocalAuthenticatorConfigsValid(config.isLocalAuthenticatorConfigsValid());
+            serviceProviderDto.setLocalAuthenticatorConfigsAuthenticationType(
+                    config.getLocalAuthenticatorConfigsAuthenticationType());
 
-        serviceProviderDto.setAdminServiceDto(getAdminServiceDto(serviceProvider, config));
-        serviceProviderDto.setExistance(ProvisionType.LOCAL);
+            // Set values for spProvisionConfig
 
-        // Set Values for SpProvisionDTO
-        spProvisionDto.setServiceProviderDto(serviceProviderDto);
+            serviceProviderDto.setAdminServiceDto(getAdminServiceDto(serviceProvider, config));
+            serviceProviderDto.setExistance(ProvisionType.LOCAL);
+
+            // Set Values for SpProvisionDTO
+            spProvisionDto.setServiceProviderDto(serviceProviderDto);
+            spProvisionDto.setDiscoveryServiceDto(null);
+        }
         spProvisionDto.setProvisionType(ProvisionType.LOCAL);
-        spProvisionDto.setDiscoveryServiceDto(null);
+        spProvisionConfig.setAdminServiceConfig(getSpProvisionConfig(mobileConnectConfigs));
+        spProvisionDto.setSpProvisionConfig(spProvisionConfig);
         return spProvisionDto;
 
+    }
+
+    private static AdminServiceConfig getSpProvisionConfig(MobileConnectConfig config) {
+        adminServiceConfig.setAdminServiceUrl(config.getSpProvisionConfig().getAdminServiceUrl());
+        adminServiceConfig
+                .setApplicationManagementHostUrl(config.getSpProvisionConfig().getApplicationManagementHostUrl());
+        adminServiceConfig.setStubAccessPassword(config.getSpProvisionConfig().getStubAccessPassword());
+        adminServiceConfig.setStubAccessUserName(config.getSpProvisionConfig().getStubAccessUserName());
+        return adminServiceConfig;
     }
 
     private AdminServiceDto getAdminServiceDto(ServiceProviderDto serviceProvider, MobileConnectConfig.Config config) {

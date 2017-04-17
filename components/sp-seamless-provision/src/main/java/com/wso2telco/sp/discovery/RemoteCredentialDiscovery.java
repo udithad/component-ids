@@ -27,6 +27,8 @@ import com.wso2telco.core.spprovisionservice.sp.entity.DiscoveryServiceConfig;
 import com.wso2telco.core.spprovisionservice.sp.entity.DiscoveryServiceDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.ProvisionType;
 import com.wso2telco.core.spprovisionservice.sp.entity.ServiceProviderDto;
+import com.wso2telco.core.spprovisionservice.sp.entity.SpProvisionConfig;
+import com.wso2telco.core.spprovisionservice.sp.entity.SpProvisionDto;
 import com.wso2telco.sp.discovery.exception.DicoveryException;
 import com.wso2telco.sp.entity.CrValidateRes;
 
@@ -36,7 +38,7 @@ public class RemoteCredentialDiscovery extends RemoteDiscovery {
 
     @Override
     public ServiceProviderDto servceProviderDiscovery(DiscoveryServiceConfig discoveryServiceConfig,
-            DiscoveryServiceDto discoveryServiceDto) throws DicoveryException {
+            DiscoveryServiceDto discoveryServiceDto,SpProvisionDto spProvisionDto) throws DicoveryException {
         log.info("CR-> Service Provider Credentail Discovery Call");
         String encodedBasicAuthCode = buildBasicAuthCode(discoveryServiceDto.getClientId(),
                 discoveryServiceDto.getClientSecret());

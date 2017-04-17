@@ -16,8 +16,10 @@
 
 package com.wso2telco.sp.provision;
 
+import com.wso2telco.core.spprovisionservice.sp.entity.AdminServiceDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.ServiceProviderDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.SpProvisionConfig;
+import com.wso2telco.core.spprovisionservice.sp.entity.SpProvisionDto;
 import com.wso2telco.core.spprovisionservice.sp.exception.SpProvisionServiceException;
 
 public class RemoteProvisioner extends Provisioner {
@@ -26,7 +28,7 @@ public class RemoteProvisioner extends Provisioner {
     public void provisionServiceProvider(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig)
             throws SpProvisionServiceException {
 
-        //todo OutBound Provisioning
+        // todo OutBound Provisioning
 
     }
 
@@ -34,6 +36,20 @@ public class RemoteProvisioner extends Provisioner {
     public void updateOauthkeys(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig)
             throws SpProvisionServiceException {
         // TODO Auto-generated method stub
-        
+
+    }
+
+    @Override
+    public ServiceProviderDto getServiceApplicationDetails(String applicationName, SpProvisionConfig spProvisionConfig)
+            throws SpProvisionServiceException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public AdminServiceDto getOauthServiceProviderData(String consumerKey, SpProvisionDto spProvisionDto)
+            throws SpProvisionServiceException {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

@@ -27,6 +27,7 @@ import com.wso2telco.core.spprovisionservice.sp.entity.DiscoveryServiceConfig;
 import com.wso2telco.core.spprovisionservice.sp.entity.DiscoveryServiceDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.ProvisionType;
 import com.wso2telco.core.spprovisionservice.sp.entity.ServiceProviderDto;
+import com.wso2telco.core.spprovisionservice.sp.entity.SpProvisionDto;
 import com.wso2telco.sp.discovery.exception.DicoveryException;
 import com.wso2telco.sp.entity.EksDiscovery;
 
@@ -36,7 +37,7 @@ public class RemoteExcKeySecretDiscovery extends RemoteDiscovery {
 
     @Override
     public ServiceProviderDto servceProviderDiscovery(DiscoveryServiceConfig discoveryServiceConfig,
-            DiscoveryServiceDto discoveryServiceDto) throws DicoveryException {
+            DiscoveryServiceDto discoveryServiceDto,SpProvisionDto spProvisionDto) throws DicoveryException {
         log.info("EKS-> Service Provider Exchange Key Discovery Call");
         String encodedBasicAuthCode = buildBasicAuthCode(discoveryServiceDto.getClientId(),
                 discoveryServiceDto.getClientSecret());

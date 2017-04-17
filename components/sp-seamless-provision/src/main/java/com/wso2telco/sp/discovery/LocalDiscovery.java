@@ -27,6 +27,7 @@ import com.wso2telco.core.spprovisionservice.sp.entity.DiscoveryServiceConfig;
 import com.wso2telco.core.spprovisionservice.sp.entity.DiscoveryServiceDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.ProvisionType;
 import com.wso2telco.core.spprovisionservice.sp.entity.ServiceProviderDto;
+import com.wso2telco.core.spprovisionservice.sp.entity.SpProvisionDto;
 import com.wso2telco.sp.discovery.exception.DicoveryException;
 import com.wso2telco.sp.internal.SpProvisionPcrDataHolder;
 import com.wso2telco.sp.provision.service.ProvisioningService;
@@ -37,6 +38,7 @@ public class LocalDiscovery extends DiscoveryLocator {
 
     private static Log log = LogFactory.getLog(LocalDiscovery.class);
     private ProvisioningService provisioningService;
+    private SpProvisionDto spProvisionDto = null;
 
     public LocalDiscovery() {
         provisioningService = new ProvisioningServiceImpl();
@@ -44,8 +46,8 @@ public class LocalDiscovery extends DiscoveryLocator {
 
     @Override
     public ServiceProviderDto servceProviderDiscovery(DiscoveryServiceConfig discoveryServiceConfig,
-            DiscoveryServiceDto discoveryServiceDto) throws DicoveryException {
-
+            DiscoveryServiceDto discoveryServiceDto, SpProvisionDto spProvisionDto) throws DicoveryException {
+        this.spProvisionDto = spProvisionDto;
         log.info("Performing Local Discovery on EKS");
         ServiceProviderDto serviceProviderDto = null;
         boolean isAppAvailable = false;
@@ -77,7 +79,7 @@ public class LocalDiscovery extends DiscoveryLocator {
         ServiceProviderDto serviceProviderDto = null;
         if (getNextDiscovery() != null) {
             serviceProviderDto = getNextDiscovery().servceProviderDiscovery(discoveryServiceConfig,
-                    discoveryServiceDto);
+                    discoveryServiceDto,spProvisionDto);
         }
 
         return serviceProviderDto;
@@ -90,7 +92,7 @@ public class LocalDiscovery extends DiscoveryLocator {
             isAppAvailable = checkSpAvailabilityInmemory(sectorId, clientId);
         } else {
 
-            AdminServiceDto adminServiceDto = provisioningService.getOauthServiceProviderData(clientId);
+            AdminServiceDto adminServiceDto = provisioningService.getOauthServiceProviderData(clientId,this.spProvisionDto);
 
             if (clientSecret != null && !clientSecret.isEmpty() && adminServiceDto != null
                     && adminServiceDto.getOauthConsumerSecret() != null

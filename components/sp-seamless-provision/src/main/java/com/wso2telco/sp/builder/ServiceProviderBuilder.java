@@ -34,9 +34,13 @@ public class ServiceProviderBuilder {
     private OauthAdminService adminService = null;
     private SpAppManagementService spAppManagementService = null;
     private static Log log = LogFactory.getLog(ServiceProviderBuilder.class);
+    private SpProvisionConfig spProvisionConfig = null;
 
-    public void reBuildOauthKey(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig)
-            throws SpProvisionServiceException {
+    public ServiceProviderBuilder(SpProvisionConfig spProvisionConfig) {
+        this.spProvisionConfig = spProvisionConfig;
+    }
+
+    public void reBuildOauthKey(ServiceProviderDto serviceProviderDto) throws SpProvisionServiceException {
         if (serviceProviderDto != null) {
             reBuildOauthDataStructure(serviceProviderDto.getAdminServiceDto());
         } else {
@@ -44,8 +48,7 @@ public class ServiceProviderBuilder {
         }
     }
 
-    public void buildServiceProvider(ServiceProviderDto serviceProviderDto, SpProvisionConfig spProvisionConfig)
-            throws SpProvisionServiceException {
+    public void buildServiceProvider(ServiceProviderDto serviceProviderDto) throws SpProvisionServiceException {
         if (serviceProviderDto != null) {
 
             buildOauthDataStructure(serviceProviderDto.getAdminServiceDto());
@@ -57,7 +60,7 @@ public class ServiceProviderBuilder {
 
     public void reBuildOauthDataStructure(AdminServiceDto adminServiceDto) throws SpProvisionServiceException {
 
-        adminService = new OauthAdminServiceImpl();
+        adminService = new OauthAdminServiceImpl(this.spProvisionConfig);
 
         if (adminServiceDto != null) {
             try {
@@ -75,7 +78,7 @@ public class ServiceProviderBuilder {
 
     public void buildOauthDataStructure(AdminServiceDto adminServiceDto) throws SpProvisionServiceException {
 
-        adminService = new OauthAdminServiceImpl();
+        adminService = new OauthAdminServiceImpl(this.spProvisionConfig);
 
         if (adminServiceDto != null) {
             try {
@@ -95,7 +98,7 @@ public class ServiceProviderBuilder {
     public ServiceProvider buildSpApplicationDataStructure(ServiceProviderDto serviceProviderDto)
             throws SpProvisionServiceException {
 
-        spAppManagementService = new SpAppManagementServiceImpl();
+        spAppManagementService = new SpAppManagementServiceImpl(this.spProvisionConfig);
         String applicationName = serviceProviderDto.getApplicationName();
         ServiceProvider serviceProvider = null;
 
@@ -117,7 +120,7 @@ public class ServiceProviderBuilder {
             throws SpProvisionServiceException {
 
         if (adminServiceDto != null) {
-            adminService = new OauthAdminServiceImpl();
+            adminService = new OauthAdminServiceImpl(this.spProvisionConfig);
             adminService.removeOAuthApplicationData(oldConsumerKey);
             adminService.registerOAuthApplicationData(adminServiceDto);
         }
@@ -126,8 +129,8 @@ public class ServiceProviderBuilder {
 
     public void revokeSpApplication(String oldConsumerKey, String applicationName) throws SpProvisionServiceException {
 
-        adminService = new OauthAdminServiceImpl();
-        spAppManagementService = new SpAppManagementServiceImpl();
+        adminService = new OauthAdminServiceImpl(this.spProvisionConfig);
+        spAppManagementService = new SpAppManagementServiceImpl(this.spProvisionConfig);
 
         if (spAppManagementService.getSpApplicationData(applicationName) != null) {
             spAppManagementService.deleteSpApplication(applicationName);
@@ -142,15 +145,16 @@ public class ServiceProviderBuilder {
     public ServiceProviderDto getServiceProviderDetails(String applicationName) throws SpProvisionServiceException {
 
         ServiceProviderDto serviceProviderDto;
-        spAppManagementService = new SpAppManagementServiceImpl();;
+        spAppManagementService = new SpAppManagementServiceImpl(this.spProvisionConfig);
         serviceProviderDto = spAppManagementService.getServiceProviderDetails(applicationName);
         return serviceProviderDto;
     }
 
-    public AdminServiceDto getOauthServiceProviderData(String consumerKey) throws SpProvisionServiceException {
+    public AdminServiceDto getOauthServiceProviderData(String consumerKey)
+            throws SpProvisionServiceException {
 
         AdminServiceDto adminServiceDto;
-        adminService = new OauthAdminServiceImpl();
+        adminService = new OauthAdminServiceImpl(this.spProvisionConfig);
         adminServiceDto = adminService.getOauthServiceProviderData(consumerKey);
         return adminServiceDto;
     }

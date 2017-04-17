@@ -16,18 +16,11 @@
 
 package com.wso2telco.sp.provision;
 
-import com.wso2telco.core.spprovisionservice.sp.entity.AdminServiceDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.ProvisionType;
-import com.wso2telco.core.spprovisionservice.sp.entity.ServiceProviderDto;
-import com.wso2telco.core.spprovisionservice.sp.exception.SpProvisionServiceException;
-import com.wso2telco.sp.builder.ServiceProviderBuilder;
 
 public class ServiceProviderProvisionFactory {
 
     private Provisioner provisioner = null;
-    private ServiceProviderDto serviceProviderDto = null;
-    private ServiceProviderBuilder serviceProviderBuilder = null;
-    private AdminServiceDto adminServiceDto = null;
 
     public Provisioner getProvisioner(ProvisionType provisionType) {
 
@@ -37,20 +30,6 @@ public class ServiceProviderProvisionFactory {
             provisioner = new RemoteProvisioner();
         }
         return provisioner;
-    }
-
-    public ServiceProviderDto getServiceApplicationDetails(String applicationName) throws SpProvisionServiceException {
-
-        serviceProviderBuilder = new ServiceProviderBuilder();
-        serviceProviderDto = serviceProviderBuilder.getServiceProviderDetails(applicationName);
-        return serviceProviderDto;
-    }
-
-    public AdminServiceDto getOauthServiceProviderData(String consumerKey)throws SpProvisionServiceException {
-
-        serviceProviderBuilder = new ServiceProviderBuilder();
-        adminServiceDto = serviceProviderBuilder.getOauthServiceProviderData(consumerKey);
-        return adminServiceDto;
     }
 
 }

@@ -31,11 +31,13 @@ import com.wso2telco.core.config.model.MobileConnectConfig.DiscoveryConfig;
 import com.wso2telco.core.config.service.ConfigurationService;
 import com.wso2telco.core.config.service.ConfigurationServiceImpl;
 import com.wso2telco.core.pcrservice.util.SectorUtil;
+import com.wso2telco.core.spprovisionservice.sp.entity.AdminServiceConfig;
 import com.wso2telco.core.spprovisionservice.sp.entity.AdminServiceDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.DiscoveryServiceConfig;
 import com.wso2telco.core.spprovisionservice.sp.entity.DiscoveryServiceDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.ProvisionType;
 import com.wso2telco.core.spprovisionservice.sp.entity.ServiceProviderDto;
+import com.wso2telco.core.spprovisionservice.sp.entity.SpProvisionConfig;
 import com.wso2telco.core.spprovisionservice.sp.entity.SpProvisionDto;
 import com.wso2telco.core.spprovisionservice.sp.exception.SpProvisionServiceException;
 import com.wso2telco.sp.discovery.service.DiscoveryService;
@@ -47,14 +49,11 @@ import com.wso2telco.sp.util.TransformUtil;
 public class SeamlessProvisionClientAuthHandler extends AbstractClientAuthHandler {
 
     private static Log log = LogFactory.getLog(SeamlessProvisionClientAuthHandler.class);
-    private DiscoveryService discoveryService;
     private static MobileConnectConfig mobileConnectConfigs = null;
     private static ConfigurationService configurationService = new ConfigurationServiceImpl();
-    private ProvisioningService provisioningService = null;
 
     public SeamlessProvisionClientAuthHandler() {
-        discoveryService = new DiscoveryServiceImpl();
-        provisioningService = new ProvisioningServiceImpl();
+
         mobileConnectConfigs = configurationService.getDataHolder().getMobileConnectConfig();
     }
 
@@ -116,7 +115,9 @@ public class SeamlessProvisionClientAuthHandler extends AbstractClientAuthHandle
 
     private boolean isInompleteServiceProviderExistLocally(String clinetId) {
         boolean isExist = false;
-        if (provisioningService.getOauthServiceProviderData(clinetId) != null) {
+        ProvisioningServiceImpl provisioningService = new ProvisioningServiceImpl();
+        MobileConnectConfig.Config config = mobileConnectConfigs.getSpProvisionConfig().getConfig();
+        if (provisioningService.getOauthServiceProviderData(clinetId, getServiceProviderDto(null, config)) != null) {
             isExist = true;
         }
         return isExist;
@@ -135,7 +136,7 @@ public class SeamlessProvisionClientAuthHandler extends AbstractClientAuthHandle
     private void provisionServiceProviderKeys(ServiceProviderDto serviceProvider) {
 
         SpProvisionDto spProvisionDto = null;
-
+        ProvisioningServiceImpl provisioningService = new ProvisioningServiceImpl();
         try {
 
             boolean isSeamlessProvisioningEnabled = mobileConnectConfigs.isSeamlessProvisioningEnabled();
@@ -157,14 +158,16 @@ public class SeamlessProvisionClientAuthHandler extends AbstractClientAuthHandle
     private SpProvisionDto getServiceProviderDto(ServiceProviderDto serviceProvider,
             MobileConnectConfig.Config config) {
         SpProvisionDto spProvisionDto = new SpProvisionDto();
+        SpProvisionConfig spProvisionConfig = new SpProvisionConfig();
 
-        String applicationName = serviceProvider.getApplicationName();
-        String description = serviceProvider.getDescription();
         if (serviceProvider != null && serviceProvider.getAdminServiceDto() != null
                 && serviceProvider.getAdminServiceDto().getOauthConsumerKey() != null
                 && !serviceProvider.getAdminServiceDto().getOauthConsumerKey().isEmpty()
                 && serviceProvider.getAdminServiceDto().getOauthConsumerSecret() != null
                 && !serviceProvider.getAdminServiceDto().getOauthConsumerSecret().isEmpty()) {
+
+            String applicationName = serviceProvider.getApplicationName();
+            String description = serviceProvider.getDescription();
 
             ServiceProviderDto serviceProviderDto = new ServiceProviderDto();
             serviceProviderDto.setApplicationName(applicationName);
@@ -198,12 +201,23 @@ public class SeamlessProvisionClientAuthHandler extends AbstractClientAuthHandle
 
             // Set Values for SpProvisionDTO
             spProvisionDto.setServiceProviderDto(serviceProviderDto);
-            spProvisionDto.setProvisionType(ProvisionType.LOCAL);
             spProvisionDto.setDiscoveryServiceDto(null);
         }
-
+        spProvisionDto.setProvisionType(ProvisionType.LOCAL);
+        spProvisionConfig.setAdminServiceConfig(getSpProvisionConfig(mobileConnectConfigs));
+        spProvisionDto.setSpProvisionConfig(spProvisionConfig);
         return spProvisionDto;
 
+    }
+
+    private AdminServiceConfig getSpProvisionConfig(MobileConnectConfig config) {
+        AdminServiceConfig adminServiceConfig = new AdminServiceConfig();
+        adminServiceConfig.setAdminServiceUrl(config.getSpProvisionConfig().getAdminServiceUrl());
+        adminServiceConfig
+                .setApplicationManagementHostUrl(config.getSpProvisionConfig().getApplicationManagementHostUrl());
+        adminServiceConfig.setStubAccessPassword(config.getSpProvisionConfig().getStubAccessPassword());
+        adminServiceConfig.setStubAccessUserName(config.getSpProvisionConfig().getStubAccessUserName());
+        return adminServiceConfig;
     }
 
     private AdminServiceDto getAdminServiceDto(ServiceProviderDto serviceProvider, MobileConnectConfig.Config config) {
@@ -229,9 +243,11 @@ public class SeamlessProvisionClientAuthHandler extends AbstractClientAuthHandle
     private ServiceProviderDto discoverServiceProvider(OAuth2AccessTokenReqDTO oAuth2AccessTokenReqDTO)
             throws IdentityOAuth2Exception {
         ServiceProviderDto serviceProviderDto = null;
+        DiscoveryServiceImpl discoveryService = new DiscoveryServiceImpl();
         try {
             serviceProviderDto = discoveryService.servceProviderEksDiscovery(readDiscoveryConfigs(),
-                    getDiscoveryServiceDto(oAuth2AccessTokenReqDTO));
+                    getDiscoveryServiceDto(oAuth2AccessTokenReqDTO),
+                    getServiceProviderDto(null, mobileConnectConfigs.getSpProvisionConfig().getConfig()));
         } catch (Exception e) {
             log.error("" + e.getMessage());
         }

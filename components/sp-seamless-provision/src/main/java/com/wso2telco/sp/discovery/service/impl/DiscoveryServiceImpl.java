@@ -22,6 +22,7 @@ import org.apache.commons.logging.LogFactory;
 import com.wso2telco.core.spprovisionservice.sp.entity.DiscoveryServiceConfig;
 import com.wso2telco.core.spprovisionservice.sp.entity.DiscoveryServiceDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.ServiceProviderDto;
+import com.wso2telco.core.spprovisionservice.sp.entity.SpProvisionDto;
 import com.wso2telco.sp.discovery.DiscoveryLocator;
 import com.wso2telco.sp.discovery.LocalDiscovery;
 import com.wso2telco.sp.discovery.RemoteCredentialDiscovery;
@@ -37,13 +38,13 @@ public class DiscoveryServiceImpl implements DiscoveryService {
 
     @Override
     public ServiceProviderDto servceProviderCredentialDiscovery(DiscoveryServiceConfig discoveryServiceConfig,
-            DiscoveryServiceDto discoveryServiceDto) {
+            DiscoveryServiceDto discoveryServiceDto,SpProvisionDto spProvisionDto) {
         ServiceProviderDto serviceProviderDto = null;
         try {
             log.info("Performing Credentials discovery for CR.");
             discoverSp = new LocalDiscovery();
             discoverSp.setNextDiscovery(new RemoteCredentialDiscovery());
-            serviceProviderDto = discoverSp.servceProviderDiscovery(discoveryServiceConfig, discoveryServiceDto);
+            serviceProviderDto = discoverSp.servceProviderDiscovery(discoveryServiceConfig, discoveryServiceDto,spProvisionDto);
         } catch (DicoveryException e) {
             if (e.isSystemError()) {
                 log.error("Error Occured While Trying To Fetch Discovery Call :: Message = " + e.getMessage());
@@ -56,13 +57,13 @@ public class DiscoveryServiceImpl implements DiscoveryService {
 
     @Override
     public ServiceProviderDto servceProviderEksDiscovery(DiscoveryServiceConfig discoveryServiceConfig,
-            DiscoveryServiceDto discoveryServiceDto) {
+            DiscoveryServiceDto discoveryServiceDto,SpProvisionDto spProvisionDto) {
         ServiceProviderDto serviceProviderDto = null;
         try {
             log.info("Performing Credentials discovery for EKS.");
             discoverSp = new LocalDiscovery();
             discoverSp.setNextDiscovery(new RemoteExcKeySecretDiscovery());
-            serviceProviderDto = discoverSp.servceProviderDiscovery(discoveryServiceConfig, discoveryServiceDto);
+            serviceProviderDto = discoverSp.servceProviderDiscovery(discoveryServiceConfig, discoveryServiceDto,spProvisionDto);
         } catch (DicoveryException e) {
             if (e.isSystemError()) {
                 log.error("Error Occured While Trying To Fetch Discovery Call " + e.getMessage());

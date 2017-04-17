@@ -27,7 +27,7 @@ import com.wso2telco.sp.provision.service.ProvisioningService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public class ProvisioningServiceImpl implements ProvisioningService<Object, Object> {
+public class ProvisioningServiceImpl implements ProvisioningService {
 
     private static Log log = LogFactory.getLog(ProvisioningServiceImpl.class);
     private ServiceProviderProvisionFactory serviceProviderProvisionFactory = null;
@@ -66,12 +66,13 @@ public class ProvisioningServiceImpl implements ProvisioningService<Object, Obje
     }
 
     @Override
-    public ServiceProviderDto getServiceProviderDetails(String applicationName) {
-
+    public ServiceProviderDto getServiceProviderDetails(String applicationName, SpProvisionDto spProvisionDto) {
         serviceProviderProvisionFactory = new ServiceProviderProvisionFactory();
+        provisioner = serviceProviderProvisionFactory.getProvisioner(provisionType);
         ServiceProviderDto serviceProviderDto = null;
         try {
-            serviceProviderDto = serviceProviderProvisionFactory.getServiceApplicationDetails(applicationName);
+            serviceProviderDto = provisioner.getServiceApplicationDetails(applicationName,
+                    spProvisionDto.getSpProvisionConfig());
         } catch (SpProvisionServiceException e) {
             log.error("Error occurred while taking details of the Service Provider");
         } catch (NullPointerException e) {
@@ -81,11 +82,13 @@ public class ProvisioningServiceImpl implements ProvisioningService<Object, Obje
     }
 
     @Override
-    public AdminServiceDto getOauthServiceProviderData(String consumerKey) {
+    public AdminServiceDto getOauthServiceProviderData(String consumerKey, SpProvisionDto spProvisionDto) {
         serviceProviderProvisionFactory = new ServiceProviderProvisionFactory();
+        provisionType = spProvisionDto.getProvisionType();
+        provisioner = serviceProviderProvisionFactory.getProvisioner(provisionType);
         AdminServiceDto adminServiceDto = null;
         try {
-            adminServiceDto = serviceProviderProvisionFactory.getOauthServiceProviderData(consumerKey);
+            adminServiceDto = provisioner.getOauthServiceProviderData(consumerKey, spProvisionDto);
         } catch (SpProvisionServiceException e) {
             log.error("Error occurred while taking details of the Service Provider");
         } catch (NullPointerException e) {
