@@ -26,23 +26,18 @@ import org.wso2.carbon.identity.oauth2.token.handlers.clientauth.AbstractClientA
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 
 import com.wso2telco.core.config.model.MobileConnectConfig;
-import com.wso2telco.core.config.model.MobileConnectConfig.Config;
 import com.wso2telco.core.config.model.MobileConnectConfig.DiscoveryConfig;
 import com.wso2telco.core.config.service.ConfigurationService;
 import com.wso2telco.core.config.service.ConfigurationServiceImpl;
 import com.wso2telco.core.pcrservice.util.SectorUtil;
 import com.wso2telco.core.spprovisionservice.sp.entity.AdminServiceConfig;
-import com.wso2telco.core.spprovisionservice.sp.entity.AdminServiceDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.DiscoveryServiceConfig;
 import com.wso2telco.core.spprovisionservice.sp.entity.DiscoveryServiceDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.ProvisionType;
 import com.wso2telco.core.spprovisionservice.sp.entity.ServiceProviderDto;
-import com.wso2telco.core.spprovisionservice.sp.entity.SpProvisionConfig;
 import com.wso2telco.core.spprovisionservice.sp.entity.SpProvisionDto;
 import com.wso2telco.core.spprovisionservice.sp.exception.SpProvisionServiceException;
-import com.wso2telco.sp.discovery.service.DiscoveryService;
 import com.wso2telco.sp.discovery.service.impl.DiscoveryServiceImpl;
-import com.wso2telco.sp.provision.service.ProvisioningService;
 import com.wso2telco.sp.provision.service.impl.ProvisioningServiceImpl;
 import com.wso2telco.sp.util.TransformUtil;
 
@@ -59,7 +54,6 @@ public class SeamlessProvisionClientAuthHandler extends AbstractClientAuthHandle
 
     @Override
     public boolean authenticateClient(OAuthTokenReqMessageContext tokReqMsgCtx) throws IdentityOAuth2Exception {
-
         seamlessProvisioning(tokReqMsgCtx);
         boolean isAuthenticated = super.authenticateClient(tokReqMsgCtx);
 
@@ -117,7 +111,8 @@ public class SeamlessProvisionClientAuthHandler extends AbstractClientAuthHandle
         boolean isExist = false;
         ProvisioningServiceImpl provisioningService = new ProvisioningServiceImpl();
         MobileConnectConfig.Config config = mobileConnectConfigs.getSpProvisionConfig().getConfig();
-        if (provisioningService.getOauthServiceProviderData(clinetId, getServiceProviderDto(null, config)) != null) {
+        if (provisioningService.getOauthServiceProviderData(clinetId,
+                getServiceProviderDto(null, mobileConnectConfigs)) != null) {
             isExist = true;
         }
         return isExist;
@@ -144,7 +139,7 @@ public class SeamlessProvisionClientAuthHandler extends AbstractClientAuthHandle
 
             if (isSeamlessProvisioningEnabled) {
                 if (config != null) {
-                    spProvisionDto = getServiceProviderDto(serviceProvider, config);
+                    spProvisionDto = getServiceProviderDto(serviceProvider, mobileConnectConfigs);
                     provisioningService.rebuildOauthKeys(spProvisionDto);
                 } else {
                     log.error("Config null");
@@ -155,57 +150,9 @@ public class SeamlessProvisionClientAuthHandler extends AbstractClientAuthHandle
         }
     }
 
-    private SpProvisionDto getServiceProviderDto(ServiceProviderDto serviceProvider,
-            MobileConnectConfig.Config config) {
-        SpProvisionDto spProvisionDto = new SpProvisionDto();
-        SpProvisionConfig spProvisionConfig = new SpProvisionConfig();
-
-        if (serviceProvider != null && serviceProvider.getAdminServiceDto() != null
-                && serviceProvider.getAdminServiceDto().getOauthConsumerKey() != null
-                && !serviceProvider.getAdminServiceDto().getOauthConsumerKey().isEmpty()
-                && serviceProvider.getAdminServiceDto().getOauthConsumerSecret() != null
-                && !serviceProvider.getAdminServiceDto().getOauthConsumerSecret().isEmpty()) {
-
-            String applicationName = serviceProvider.getApplicationName();
-            String description = serviceProvider.getDescription();
-
-            ServiceProviderDto serviceProviderDto = new ServiceProviderDto();
-            serviceProviderDto.setApplicationName(applicationName);
-            serviceProviderDto.setDescription(description);
-            serviceProviderDto.setInboundAuthKey(serviceProvider.getAdminServiceDto().getOauthConsumerKey());
-            serviceProviderDto.setPropertyValue(serviceProvider.getAdminServiceDto().getOauthConsumerSecret());
-            serviceProviderDto.setAlwaysSendMappedLocalSubjectId(config.isAlwaysSendMappedLocalSubjectId());
-            serviceProviderDto.setLocalClaimDialect(config.isLocalClaimDialect());
-            serviceProviderDto.setInboundAuthType(config.getInboundAuthType());
-            serviceProviderDto.setConfidential(config.isConfidential());
-            serviceProviderDto.setDefaultValue(config.getDefaultValue());
-            serviceProviderDto.setPropertyName(config.getPropertyName());
-            serviceProviderDto.setPropertyRequired(config.isPropertyRequired());
-            serviceProviderDto.setProvisioningEnabled(config.isProvisioningEnabled());
-            serviceProviderDto.setProvisioningUserStore(config.getProvisioningUserStore());
-            String idpRoles[] = { applicationName };
-            serviceProviderDto.setIdpRoles(idpRoles);
-            serviceProviderDto.setSaasApp(config.isSaasApp());
-            serviceProviderDto
-                    .setLocalAuthenticatorConfigsDisplayName(config.getLocalAuthenticatorConfigsDisplayName());
-            serviceProviderDto.setLocalAuthenticatorConfigsEnabled(config.isLocalAuthenticatorConfigsEnabled());
-            serviceProviderDto.setLocalAuthenticatorConfigsName(config.getLocalAuthenticatorConfigsName());
-            serviceProviderDto.setLocalAuthenticatorConfigsValid(config.isLocalAuthenticatorConfigsValid());
-            serviceProviderDto.setLocalAuthenticatorConfigsAuthenticationType(
-                    config.getLocalAuthenticatorConfigsAuthenticationType());
-
-            // Set values for spProvisionConfig
-
-            serviceProviderDto.setAdminServiceDto(getAdminServiceDto(serviceProvider, config));
-            serviceProviderDto.setExistance(ProvisionType.LOCAL);
-
-            // Set Values for SpProvisionDTO
-            spProvisionDto.setServiceProviderDto(serviceProviderDto);
-            spProvisionDto.setDiscoveryServiceDto(null);
-        }
-        spProvisionDto.setProvisionType(ProvisionType.LOCAL);
-        spProvisionConfig.setAdminServiceConfig(getSpProvisionConfig(mobileConnectConfigs));
-        spProvisionDto.setSpProvisionConfig(spProvisionConfig);
+    private SpProvisionDto getServiceProviderDto(ServiceProviderDto serviceProvider, MobileConnectConfig mConfig) {
+        SpProvisionDto spProvisionDto = TransformUtil.getServiceProviderDto(serviceProvider, mConfig);
+        spProvisionDto.getSpProvisionConfig().setAdminServiceConfig(getSpProvisionConfig(mConfig));
         return spProvisionDto;
 
     }
@@ -220,34 +167,13 @@ public class SeamlessProvisionClientAuthHandler extends AbstractClientAuthHandle
         return adminServiceConfig;
     }
 
-    private AdminServiceDto getAdminServiceDto(ServiceProviderDto serviceProvider, MobileConnectConfig.Config config) {
-
-        String applicationName = serviceProvider.getApplicationName();
-        String cutomerKey = serviceProvider.getAdminServiceDto().getOauthConsumerKey().replaceAll("x-", "");
-        String secretKey = serviceProvider.getAdminServiceDto().getOauthConsumerSecret().replaceAll("x-", "");
-        String callbackUrl = serviceProvider.getAdminServiceDto().getCallbackUrl();
-
-        AdminServiceDto adminServiceDto = new AdminServiceDto();
-        adminServiceDto.setApplicationName(applicationName);
-        adminServiceDto.setCallbackUrl(callbackUrl);
-        adminServiceDto.setOauthVersion(config.getoAuthVersion());
-        adminServiceDto.setGrantTypes(config.getGrantTypes());
-        adminServiceDto.setOauthConsumerKey(cutomerKey);
-        adminServiceDto.setOauthConsumerSecret(secretKey);
-        adminServiceDto.setPkceMandatory(config.isPkceMandatory());
-        adminServiceDto.setPkceSupportPlain(config.isPkceSupportPlain());
-        return adminServiceDto;
-
-    }
-
     private ServiceProviderDto discoverServiceProvider(OAuth2AccessTokenReqDTO oAuth2AccessTokenReqDTO)
             throws IdentityOAuth2Exception {
         ServiceProviderDto serviceProviderDto = null;
         DiscoveryServiceImpl discoveryService = new DiscoveryServiceImpl();
         try {
             serviceProviderDto = discoveryService.servceProviderEksDiscovery(readDiscoveryConfigs(),
-                    getDiscoveryServiceDto(oAuth2AccessTokenReqDTO),
-                    getServiceProviderDto(null, mobileConnectConfigs.getSpProvisionConfig().getConfig()));
+                    getDiscoveryServiceDto(oAuth2AccessTokenReqDTO), getServiceProviderDto(null, mobileConnectConfigs));
         } catch (Exception e) {
             log.error("" + e.getMessage());
         }

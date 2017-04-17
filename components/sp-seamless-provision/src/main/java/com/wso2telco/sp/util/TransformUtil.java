@@ -20,14 +20,19 @@ import com.wso2telco.core.config.model.MobileConnectConfig.CrValidateDiscoveryCo
 import com.wso2telco.core.config.model.MobileConnectConfig.DiscoveryConfig;
 import com.wso2telco.core.config.model.MobileConnectConfig.EksDiscoveryConfig;
 import com.wso2telco.core.pcrservice.util.SectorUtil;
+import com.wso2telco.core.spprovisionservice.sp.entity.AdminServiceDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.DiscoveryServiceConfig;
 import com.wso2telco.core.spprovisionservice.sp.entity.DiscoveryServiceDto;
 import com.wso2telco.core.spprovisionservice.sp.entity.EksDisConfig;
+import com.wso2telco.core.spprovisionservice.sp.entity.ProvisionType;
+import com.wso2telco.core.spprovisionservice.sp.entity.ServiceProviderDto;
+import com.wso2telco.core.spprovisionservice.sp.entity.SpProvisionConfig;
+import com.wso2telco.core.spprovisionservice.sp.entity.SpProvisionDto;
 
 public class TransformUtil {
 
     public static DiscoveryServiceConfig transformDiscoveryConfig(DiscoveryConfig discoveryConfig,
-                                                                  MobileConnectConfig mobileConnectConfig) {
+            MobileConnectConfig mobileConnectConfig) {
         DiscoveryServiceConfig config = new DiscoveryServiceConfig();
 
         config.setEksDiscoveryConfig(transformEksDiscoveryConfig(discoveryConfig.getEksDiscoveryConfig()));
@@ -37,11 +42,9 @@ public class TransformUtil {
         return config;
     }
 
-    public static com.wso2telco.core.spprovisionservice.sp.entity.CrValidateDiscoveryConfig
-    transoformCrValidateDiscoveryConfig(
+    public static com.wso2telco.core.spprovisionservice.sp.entity.CrValidateDiscoveryConfig transoformCrValidateDiscoveryConfig(
             CrValidateDiscoveryConfig discoveryConf) {
-        com.wso2telco.core.spprovisionservice.sp.entity.CrValidateDiscoveryConfig crValidateDiscoveryConfig = new com
-                .wso2telco.core.spprovisionservice.sp.entity.CrValidateDiscoveryConfig();
+        com.wso2telco.core.spprovisionservice.sp.entity.CrValidateDiscoveryConfig crValidateDiscoveryConfig = new com.wso2telco.core.spprovisionservice.sp.entity.CrValidateDiscoveryConfig();
         if (discoveryConf != null) {
             crValidateDiscoveryConfig.setServiceUrl(discoveryConf.getServiceUrl());
         }
@@ -67,6 +70,84 @@ public class TransformUtil {
         }
         discoveryServiceDto.setSectorId(sectorId);
         return discoveryServiceDto;
+    }
+
+    public static SpProvisionDto getServiceProviderDto(ServiceProviderDto serviceProvider,
+            MobileConnectConfig mConfig) {
+        SpProvisionDto spProvisionDto = new SpProvisionDto();
+        SpProvisionConfig spProvisionConfig = new SpProvisionConfig();
+        MobileConnectConfig.Config config = mConfig.getSpProvisionConfig().getConfig();
+
+        if (serviceProvider != null && serviceProvider.getAdminServiceDto() != null
+                && serviceProvider.getAdminServiceDto().getOauthConsumerKey() != null
+                && !serviceProvider.getAdminServiceDto().getOauthConsumerKey().isEmpty()) {
+
+            String applicationName = serviceProvider.getApplicationName();
+            String description = serviceProvider.getDescription();
+
+            ServiceProviderDto serviceProviderDto = new ServiceProviderDto();
+            serviceProviderDto.setApplicationName(applicationName);
+            serviceProviderDto.setDescription(description);
+            serviceProviderDto.setInboundAuthKey(serviceProvider.getAdminServiceDto().getOauthConsumerKey());
+            if (serviceProvider.getAdminServiceDto().getOauthConsumerSecret() != null
+                    && !serviceProvider.getAdminServiceDto().getOauthConsumerSecret().isEmpty()) {
+                serviceProviderDto.setPropertyValue(serviceProvider.getAdminServiceDto().getOauthConsumerSecret());
+            }
+
+            serviceProviderDto.setAlwaysSendMappedLocalSubjectId(config.isAlwaysSendMappedLocalSubjectId());
+            serviceProviderDto.setLocalClaimDialect(config.isLocalClaimDialect());
+            serviceProviderDto.setInboundAuthType(config.getInboundAuthType());
+            serviceProviderDto.setConfidential(config.isConfidential());
+            serviceProviderDto.setDefaultValue(config.getDefaultValue());
+            serviceProviderDto.setPropertyName(config.getPropertyName());
+            serviceProviderDto.setPropertyRequired(config.isPropertyRequired());
+            serviceProviderDto.setProvisioningEnabled(config.isProvisioningEnabled());
+            serviceProviderDto.setProvisioningUserStore(config.getProvisioningUserStore());
+            String idpRoles[] = { applicationName };
+            serviceProviderDto.setIdpRoles(idpRoles);
+            serviceProviderDto.setSaasApp(config.isSaasApp());
+            serviceProviderDto
+                    .setLocalAuthenticatorConfigsDisplayName(config.getLocalAuthenticatorConfigsDisplayName());
+            serviceProviderDto.setLocalAuthenticatorConfigsEnabled(config.isLocalAuthenticatorConfigsEnabled());
+            serviceProviderDto.setLocalAuthenticatorConfigsName(config.getLocalAuthenticatorConfigsName());
+            serviceProviderDto.setLocalAuthenticatorConfigsValid(config.isLocalAuthenticatorConfigsValid());
+            serviceProviderDto.setLocalAuthenticatorConfigsAuthenticationType(
+                    config.getLocalAuthenticatorConfigsAuthenticationType());
+
+            // Set values for spProvisionConfig
+
+            serviceProviderDto.setAdminServiceDto(getAdminServiceDto(serviceProvider, config));
+            serviceProviderDto.setExistance(ProvisionType.LOCAL);
+
+            // Set Values for SpProvisionDTO
+            spProvisionDto.setServiceProviderDto(serviceProviderDto);
+            spProvisionDto.setDiscoveryServiceDto(null);
+        }
+        spProvisionDto.setProvisionType(ProvisionType.LOCAL);
+        spProvisionDto.setSpProvisionConfig(spProvisionConfig);
+        return spProvisionDto;
+
+    }
+
+    private static AdminServiceDto getAdminServiceDto(ServiceProviderDto serviceProvider,
+            MobileConnectConfig.Config config) {
+
+        String applicationName = serviceProvider.getApplicationName();
+        String cutomerKey = serviceProvider.getAdminServiceDto().getOauthConsumerKey();
+        String secretKey = serviceProvider.getAdminServiceDto().getOauthConsumerSecret();
+        String callbackUrl = serviceProvider.getAdminServiceDto().getCallbackUrl();
+
+        AdminServiceDto adminServiceDto = new AdminServiceDto();
+        adminServiceDto.setApplicationName(applicationName);
+        adminServiceDto.setCallbackUrl(callbackUrl);
+        adminServiceDto.setOauthVersion(config.getoAuthVersion());
+        adminServiceDto.setGrantTypes(config.getGrantTypes());
+        adminServiceDto.setOauthConsumerKey(cutomerKey);
+        adminServiceDto.setOauthConsumerSecret(secretKey);
+        adminServiceDto.setPkceMandatory(config.isPkceMandatory());
+        adminServiceDto.setPkceSupportPlain(config.isPkceSupportPlain());
+        return adminServiceDto;
+
     }
 
 }

@@ -315,7 +315,7 @@ public class Endpoints {
                     TransformUtil.transformDiscoveryConfig(mobileConnectConfigs.getDiscoveryConfig(),
                             mobileConnectConfigs),
                     TransformUtil.transofrmDiscoveryDto(client_id, redirectURL),
-                    getServiceProviderDto(null, mobileConnectConfigs.getSpProvisionConfig().getConfig()));
+                    getServiceProviderDto(null, mobileConnectConfigs));
 
             if (serviceProviderDto != null && serviceProviderDto.getExistance().equals(ProvisionType.REMOTE)
                     && serviceProviderDto.getAdminServiceDto() != null) {
@@ -336,7 +336,7 @@ public class Endpoints {
 
             if (isSeamlessProvisioningEnabled) {
                 if (config != null) {
-                    spProvisionDto = getServiceProviderDto(serviceProvider, config);
+                    spProvisionDto = getServiceProviderDto(serviceProvider, mobileConnectConfigs);
                     ProvisioningService provisioningService = new ProvisioningServiceImpl();
                     provisioningService.provisionServiceProvider(spProvisionDto);
                 } else {
@@ -349,53 +349,10 @@ public class Endpoints {
     }
 
     private SpProvisionDto getServiceProviderDto(ServiceProviderDto serviceProvider,
-            MobileConnectConfig.Config config) {
-        SpProvisionDto spProvisionDto = new SpProvisionDto();
-        SpProvisionConfig spProvisionConfig = new SpProvisionConfig();
-
-        if (serviceProvider != null && serviceProvider.getAdminServiceDto() != null
-                && serviceProvider.getAdminServiceDto().getOauthConsumerKey() != null
-                && !serviceProvider.getAdminServiceDto().getOauthConsumerKey().isEmpty()) {
-
-            String applicationName = serviceProvider.getApplicationName();
-            String description = serviceProvider.getDescription();
-
-            ServiceProviderDto serviceProviderDto = new ServiceProviderDto();
-            serviceProviderDto.setApplicationName(applicationName);
-            serviceProviderDto.setDescription(description);
-            serviceProviderDto.setInboundAuthKey(serviceProvider.getAdminServiceDto().getOauthConsumerKey());
-            serviceProviderDto.setAlwaysSendMappedLocalSubjectId(config.isAlwaysSendMappedLocalSubjectId());
-            serviceProviderDto.setLocalClaimDialect(config.isLocalClaimDialect());
-            serviceProviderDto.setInboundAuthType(config.getInboundAuthType());
-            serviceProviderDto.setConfidential(config.isConfidential());
-            serviceProviderDto.setDefaultValue(config.getDefaultValue());
-            serviceProviderDto.setPropertyName(config.getPropertyName());
-            serviceProviderDto.setPropertyRequired(config.isPropertyRequired());
-            serviceProviderDto.setProvisioningEnabled(config.isProvisioningEnabled());
-            serviceProviderDto.setProvisioningUserStore(config.getProvisioningUserStore());
-            String idpRoles[] = { applicationName };
-            serviceProviderDto.setIdpRoles(idpRoles);
-            serviceProviderDto.setSaasApp(config.isSaasApp());
-            serviceProviderDto
-                    .setLocalAuthenticatorConfigsDisplayName(config.getLocalAuthenticatorConfigsDisplayName());
-            serviceProviderDto.setLocalAuthenticatorConfigsEnabled(config.isLocalAuthenticatorConfigsEnabled());
-            serviceProviderDto.setLocalAuthenticatorConfigsName(config.getLocalAuthenticatorConfigsName());
-            serviceProviderDto.setLocalAuthenticatorConfigsValid(config.isLocalAuthenticatorConfigsValid());
-            serviceProviderDto.setLocalAuthenticatorConfigsAuthenticationType(
-                    config.getLocalAuthenticatorConfigsAuthenticationType());
-
-            // Set values for spProvisionConfig
-
-            serviceProviderDto.setAdminServiceDto(getAdminServiceDto(serviceProvider, config));
-            serviceProviderDto.setExistance(ProvisionType.LOCAL);
-
-            // Set Values for SpProvisionDTO
-            spProvisionDto.setServiceProviderDto(serviceProviderDto);
-            spProvisionDto.setDiscoveryServiceDto(null);
-        }
-        spProvisionDto.setProvisionType(ProvisionType.LOCAL);
-        spProvisionConfig.setAdminServiceConfig(getSpProvisionConfig(mobileConnectConfigs));
-        spProvisionDto.setSpProvisionConfig(spProvisionConfig);
+            MobileConnectConfig config) {
+        
+        SpProvisionDto spProvisionDto = TransformUtil.getServiceProviderDto(serviceProvider, config);
+        spProvisionDto.getSpProvisionConfig().setAdminServiceConfig(adminServiceConfig);
         return spProvisionDto;
 
     }
@@ -407,26 +364,6 @@ public class Endpoints {
         adminServiceConfig.setStubAccessPassword(config.getSpProvisionConfig().getStubAccessPassword());
         adminServiceConfig.setStubAccessUserName(config.getSpProvisionConfig().getStubAccessUserName());
         return adminServiceConfig;
-    }
-
-    private AdminServiceDto getAdminServiceDto(ServiceProviderDto serviceProvider, MobileConnectConfig.Config config) {
-
-        String applicationName = serviceProvider.getApplicationName();
-        String cutomerKey = serviceProvider.getAdminServiceDto().getOauthConsumerKey();
-        String secretKey = serviceProvider.getAdminServiceDto().getOauthConsumerSecret();;
-        String callbackUrl = serviceProvider.getAdminServiceDto().getCallbackUrl();
-
-        AdminServiceDto adminServiceDto = new AdminServiceDto();
-        adminServiceDto.setApplicationName(applicationName);
-        adminServiceDto.setCallbackUrl(callbackUrl);
-        adminServiceDto.setOauthVersion(config.getoAuthVersion());
-        adminServiceDto.setGrantTypes(config.getGrantTypes());
-        adminServiceDto.setOauthConsumerKey(cutomerKey);
-        adminServiceDto.setOauthConsumerSecret(secretKey);
-        adminServiceDto.setPkceMandatory(config.isPkceMandatory());
-        adminServiceDto.setPkceSupportPlain(config.isPkceSupportPlain());
-        return adminServiceDto;
-
     }
 
     /**
